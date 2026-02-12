@@ -1,0 +1,19 @@
+defaults:
+  - omm: solvent
+  - tw: all
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+  - _self_
+
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .  
+
+global_args:
+  folder_name: "./"
+  amber_filename: "aib9"
+  save_filename: "aib9"
+  starting_positions: null
+  num_data_points: 10
+  save_freq: 5000

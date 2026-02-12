@@ -1,0 +1,19 @@
+defaults:
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+  - _self_
+
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .  
+
+global_args:
+  accelerator: cuda
+  config_path: ""
+  ckpt_path: ""
+  use_training_dataset: true
+  dataset_folder_name: null
+  individual_protein_datasets: null
+  report_metric_per_protein_save_folder: null
+

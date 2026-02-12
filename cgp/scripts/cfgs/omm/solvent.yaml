@@ -1,0 +1,27 @@
+simulation_type: "ProteinSolvent"
+simulation_args:
+  temperature: 300
+  temperature_units: "kelvin"
+  friction: 1.0
+  dt: 0.002
+  time_units: "picoseconds"
+  fix: null
+  integrator_to_use: "ovrvo"
+  do_energy_minimization: True
+  chk_freq: null #Automatically computed if 0
+  device: "CUDA" #CUDA or CPU
+solvent_args:
+  nonbonded_cutoff: 0.9
+  nonbonded_cutoff_length_units: "nanometers"
+  nonbonded_method: "PME"
+  switch_width: 0.16
+  switch_width_length_units: "nanometers"
+  constraints: "HBonds"
+  mcb_pressure: 1
+  mcb_pressure_units: "bar"
+  mcb_temperature: 300
+  mcb_temperature_units: "kelvin"
+  mcb_freq: 100
+  use_dispersion_correction: True
+  ewald_tolerance: 0.0005
+  use_switching_function: True

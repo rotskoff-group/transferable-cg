@@ -1,0 +1,21 @@
+model: "eSEN"
+collate_fn: "nn_collate_features"
+model_args:
+  nn_cutoff: 20.0
+  max_num_elements: 67
+  sphere_channels: 128
+  lmax: 2
+  mmax: 2
+  edge_channels: 128
+  distance_function: "gaussian"
+  num_distance_basis: 10
+  direct_forces: false
+  num_layers: 2
+  hidden_channels: 128
+  norm_type: "rms_norm_sh"
+  act_type: "gate"
+  mlp_type: "spectral"
+  use_envelope: true
+  activation_checkpointing: true
+
+  

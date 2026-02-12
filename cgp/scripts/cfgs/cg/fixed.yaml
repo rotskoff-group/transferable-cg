@@ -1,0 +1,23 @@
+cg_model: "CGFixed"
+cg_model_args:
+  cg_type: "backbone" #either backbone or c_alpha
+  protein_name: null
+  dataset_subset_indices_filename: null
+  cg_length_units: "angstroms"
+  cg_energy_units: "kilocalories_per_mole"
+  store_in_dataset_args:
+    store_positions: True
+    store_forces: True
+    store_energies: True
+    store_features: False
+    store_bond_distance_features: True
+    store_bond_angle_features: True
+    store_dihedral_angle_features: True
+    store_nonbonded_features: True
+    store_atom_features: True
+  feature_args: null
+  nonbonded_feature_args:
+    cutoff: 20
+    cutoff_units: angstroms
+
+

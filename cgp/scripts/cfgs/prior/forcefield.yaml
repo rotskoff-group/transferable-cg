@@ -1,0 +1,20 @@
+model: "ForceField"
+collate_fn: "forcefield_collate_features"
+model_args:
+  nn_cutoff: 20.0
+  return_forces: False
+  has_bonded: True
+  has_angles: True
+  has_vdw: True
+  has_wca: True
+  has_coulomb: True
+  has_dihedrals: True
+  has_calvados_vdw: False
+  init_bonded_terms: True
+  init_angle_terms: True
+  init_dihedral_terms: True
+  init_nonbonded_terms: True
+  init_calvados_vdw_terms: True
+  num_dihedral_basis: 10
+  dielectric_constant: 1.0
+  vdw_cutoff_distance: 20.0
