@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scaling Transferable Coarse-Graining with Mean Force Matching</title>
+  <meta name="description" content="Project page for Scaling Transferable Coarse-graining with Mean Force Matching.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f3ee;
+      --paper: #fffdf8;
+      --ink: #1f2430;
+      --muted: #5e636e;
+      --line: #ddd5c8;
+      --accent: #2f5d50;
+      --accent-soft: #e8f0ec;
+      --shadow: 0 20px 40px rgba(35, 35, 35, 0.08);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "EB Garamond", Garamond, "Times New Roman", serif;
+      background:
+        radial-gradient(1200px 700px at 80% -10%, #ece7dd 10%, transparent 60%),
+        radial-gradient(1000px 600px at -10% 0%, #eef2ec 0%, transparent 60%),
+        var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    .container {
+      width: min(1040px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2.5rem 0 3rem;
+    }
+
+    .hero {
+      background: linear-gradient(170deg, rgba(255, 255, 255, 0.94), rgba(255, 252, 246, 0.98));
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 2px);
+      padding: clamp(1.4rem, 3vw, 2.5rem);
+      box-shadow: var(--shadow);
+      animation: rise 0.8s ease-out;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.1rem, 5vw, 3.2rem);
+      line-height: 1.02;
+      letter-spacing: 0.01em;
+    }
+
+    .subtitle {
+      margin-top: 0.75rem;
+      color: var(--muted);
+      font-size: clamp(1.1rem, 2.7vw, 1.38rem);
+    }
+
+    .authors {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+    }
+
+    .lede {
+      margin-top: 1rem;
+      color: #31363f;
+      font-size: 1.16rem;
+      max-width: 70ch;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .chip {
+      padding: 0.38rem 0.74rem;
+      border: 1px solid #c6d4cd;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.98rem;
+      font-weight: 500;
+    }
+
+    .main-figure {
+      margin-top: 1.5rem;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0.9rem;
+    }
+
+    .main-figure img {
+      width: 100%;
+      display: block;
+      border-radius: 10px;
+    }
+
+    .caption {
+      margin-top: 0.7rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    section {
+      margin-top: 1.45rem;
+      background: rgba(255, 253, 248, 0.88);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+      box-shadow: 0 8px 20px rgba(35, 35, 35, 0.05);
+      animation: rise 0.9s ease-out;
+      animation-fill-mode: both;
+    }
+
+    section h2 {
+      margin: 0 0 0.65rem;
+      color: #263340;
+      font-size: 1.55rem;
+      font-weight: 600;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .metric {
+      background: #fcfaf5;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.75rem;
+    }
+
+    .metric .value {
+      font-size: 2rem;
+      line-height: 1;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .metric .label {
+      margin-top: 0.35rem;
+      color: #414754;
+      font-size: 1.02rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 1.05rem;
+      margin-top: 0.2rem;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 0.54rem 0.42rem;
+      text-align: left;
+    }
+
+    th {
+      color: #334656;
+      font-weight: 600;
+    }
+
+    td:first-child,
+    th:first-child {
+      padding-left: 0;
+    }
+
+    td:last-child,
+    th:last-child {
+      padding-right: 0;
+    }
+
+    .best {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .footnote {
+      margin-top: 0.62rem;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(9px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .container {
+        width: min(1040px, calc(100% - 1.1rem));
+        padding-top: 1rem;
+      }
+
+      h1 {
+        line-height: 1.08;
+      }
+
+      .authors,
+      .lede {
+        font-size: 1.08rem;
+      }
+
+      .metric .value {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <h1>Scaling Transferable Coarse-Graining with Mean Force Matching</h1>
+      <p class="subtitle">A data-efficient route to thermodynamically consistent, transferable protein coarse-grained models.</p>
+      <p class="authors">Abigail Park<sup>&dagger;</sup> and Grant M. Rotskoff<sup>&dagger;,&Dagger;</sup></p>
+      <p class="lede">
+        We compare force matching, score matching, and mean force matching for training neural coarse-grained protein potentials.
+        Mean force matching substantially lowers noise in the objective, enabling better zero-shot generalization with far less data and compute.
+      </p>
+      <div class="chips" aria-label="Project tags">
+        <span class="chip">Transferable Coarse-Graining</span>
+        <span class="chip">Thermodynamic Consistency</span>
+        <span class="chip">Mean Force Matching</span>
+        <span class="chip">Zero-Shot Protein FES</span>
+      </div>
+
+      <figure class="main-figure">
+        <img src="assets/images/fig1_schematic.png" alt="Schematic of mean force matching reducing noise and improving data efficiency for transferable coarse-grained protein models.">
+        <figcaption class="caption">
+          Figure 1: Project overview. Mean force matching reduces label noise, improves data efficiency, and delivers stronger zero-shot transfer across protein sequence space.
+        </figcaption>
+      </figure>
+    </header>
+
+    <section>
+      <h2>Key Results</h2>
+      <div class="metrics">
+        <article class="metric">
+          <div class="value">50x</div>
+          <div class="label">fewer training samples needed by mean force matching</div>
+        </article>
+        <article class="metric">
+          <div class="value">87%</div>
+          <div class="label">less total atomistic simulation time for data generation</div>
+        </article>
+        <article class="metric">
+          <div class="value">10x</div>
+          <div class="label">faster MACE training epoch (MFM vs. FM on comparable setup)</div>
+        </article>
+        <article class="metric">
+          <div class="value">20x</div>
+          <div class="label">faster MACE training epoch (MFM vs. score matching)</div>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Architecture and Objective Benchmark</h2>
+      <table aria-label="Held-out test MSE table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>MFM</th>
+            <th>MFM 100K</th>
+            <th>FM</th>
+            <th>SM</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SchNet</td>
+            <td>32.53</td>
+            <td>31.31</td>
+            <td>39.83</td>
+            <td>47.34</td>
+          </tr>
+          <tr>
+            <td>MACE</td>
+            <td>26.20</td>
+            <td>22.62</td>
+            <td>34.38</td>
+            <td>38.78</td>
+          </tr>
+          <tr>
+            <td>eSEN</td>
+            <td>19.05</td>
+            <td class="best">14.89</td>
+            <td>24.28</td>
+            <td>25.55</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="footnote">Held-out mean-force MSE across 50 unseen CATH domains (kcal/mol A)^2. Lower is better.</p>
+    </section>
+
+    <section>
+      <h2>Generalization Highlights</h2>
+      <p>
+        On trp-cage, models trained with force matching and score matching fail to stabilize the folded basin and confuse metastable states.
+        In contrast, MFM-trained MACE and eSEN recover folded, misfolded, and unfolded basins with much closer agreement to atomistic references.
+      </p>
+      <p>
+        Beyond single chains, the transferable model generalizes to the ParD-ParE complex, preserving structural stability and reproducing low-error backbone dihedral behavior in structured regions.
+      </p>
+    </section>
+
+    <section>
+      <h2>Takeaway</h2>
+      <p>
+        Mean force matching offers a practical scaling path for transferable coarse-grained protein potentials:
+        lower-variance supervision, stronger thermodynamic fidelity, and substantially reduced compute requirements.
+      </p>
+    </section>
+  </main>
+</body>
+</html>
