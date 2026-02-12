@@ -11,7 +11,6 @@ import numpy as np
 import torch
 import torch.nn
 import torch.utils.data
-from scipy.constants import c, e
 
 from .scatter import scatter_sum
 

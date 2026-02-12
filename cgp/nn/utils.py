@@ -203,21 +203,3 @@ def create_lightning_model(nn_config, prior_config, train_config):
     return lightning_model
 
 
-def check_configs_equal(config1, config2, keys_to_test):
-    """Compares two configurations
-    Args:
-        config1 (dict): A dictionary with the configuration
-        config2 (dict): A dictionary with the configuration
-    Returns:
-        bool: True if the configurations are the same, False otherwise
-    """
-    config1 = copy.deepcopy(config1)
-    config2 = copy.deepcopy(config2)
-    configs_equal = True
-    for key in keys_to_test:
-        if OmegaConf.select(config1, key) != OmegaConf.select(config2, key):
-            configs_equal = False
-    return configs_equal
-
-
-

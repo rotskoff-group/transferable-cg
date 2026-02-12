@@ -14,7 +14,6 @@ hydra:
 global_args:
   use_nn: true
   use_prior: true
-  keys_to_test: ["nn.model", "nn.model_args", "prior.model", "prior.model_args"]
   load_model: null
 
 dataset:

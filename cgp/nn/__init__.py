@@ -1,7 +1,6 @@
 from .utils import (create_dataset_from_path,
                     create_dataloaders, 
                     create_lightning_model, 
-                    check_configs_equal,
                     get_collate_fn)
 from .u_model import UModel
 from .dataset import NNDataset, generate_edges
