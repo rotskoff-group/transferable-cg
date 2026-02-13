@@ -35,7 +35,7 @@ class CGFixed:
         elif cg_type == "c_alpha":
             atom_names = ["CA"]
         else:
-            raise ValueError(f"cg_type must be either 'backbone' or 'alpha'")
+            raise ValueError("cg_type must be either 'backbone' or 'alpha'")
 
         data_folder_name = f"{root_data_folder_name}/{protein_name}"
         protein_filename = f"{data_folder_name}/{protein_name}"
@@ -126,7 +126,7 @@ class CGFixed:
             fg_length_units = getattr(openmm.unit, fg_length_units)
             fg_forces = fg_forces * (
                 fg_energy_units / fg_length_units
-            ).conversion_factor_to(((cg_energy_units / cg_length_units)))
+            ).conversion_factor_to((cg_energy_units / cg_length_units))
         else:
             fg_forces = None
 
@@ -221,9 +221,7 @@ class CGFixed:
             fg_energies (dask.array): The full atomistic energies (num_data_points, 1)
             file (h5py.File): The HDF5 file
         """
-        energies_dataset = file.create_dataset(
-            "energies", (fg_energies.shape[0], 1), dtype="f4"
-        )
+        file.create_dataset("energies", (fg_energies.shape[0], 1), dtype="f4")
         pass
 
     def _store_cg_features(self, single_config_feature, file, feature_args):
@@ -238,7 +236,7 @@ class CGFixed:
         # )
         # single_config_feature[[0] * len(cg_features_dataset)].store(cg_features_dataset)
         raise NotImplementedError("This function should be implemented in the subclass")
-    
+
     def _get_feature(
         self,
         cg_topology,
@@ -394,14 +392,12 @@ class CGFixed:
             for j, (edges_sub_i, edge_features_sub_i) in enumerate(
                 zip(edge_indices_sub, edge_features_sub)
             ):
-
                 file["nonbonded_edge_indices"][
                     i * chunk_size + j, : edges_sub_i.shape[1], :
                 ] = edges_sub_i
                 file["nonbonded_edge_features"][
                     i * chunk_size + j, : edges_sub_i.shape[1], :
                 ] = edge_features_sub_i
-
 
     def get_cg_dataset_filename(self):
         """Gets the formatted cg dataset

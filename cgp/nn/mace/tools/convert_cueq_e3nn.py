@@ -1,11 +1,8 @@
-import argparse
 import logging
-import os
 from typing import Dict, List, Tuple
 
 import torch
 from e3nn import o3
-
 
 
 def get_transfer_keys() -> List[str]:
@@ -51,7 +48,7 @@ def transfer_symmetric_contractions(
 
         # Get split sizes based on target dimensions
         splits = []
-        for k in range(kmax+1):
+        for k in range(kmax + 1):
             for suffix in ["_max", ".0", ".1"]:
                 key = f"nn.products.{i}.symmetric_contractions.contractions.{k}.weights{suffix}"
                 target_shape = target_dict[key].shape
@@ -62,7 +59,7 @@ def transfer_symmetric_contractions(
 
         # Assign back to target dictionary
         idx = 0
-        for k in range(kmax+1):
+        for k in range(kmax + 1):
             target_dict[
                 f"nn.products.{i}.symmetric_contractions.contractions.{k}.weights_max"
             ] = weights_split[idx]
@@ -95,13 +92,15 @@ def convert_weights(
             logging.warning(f"Key {key} not found in source model")
 
     # Transfer symmetric contractions
-    target_dict = transfer_symmetric_contractions(source_dict, target_dict, max_L, correlation)
-    
+    target_dict = transfer_symmetric_contractions(
+        source_dict, target_dict, max_L, correlation
+    )
+
     # Unsqueeze linear and skip_tp layers
     for key in source_dict.keys():
         if any(x in key for x in ["linear", "skip_tp"]) and "weight" in key:
             target_dict[key] = target_dict[key].squeeze(0)
-    
+
     # Transfer remaining matching keys
     transferred_keys = set(transfer_keys)
     remaining_keys = (
@@ -121,7 +120,3 @@ def convert_weights(
                 )
 
     return target_dict
-
-
-
-

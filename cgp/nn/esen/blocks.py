@@ -8,7 +8,7 @@ LICENSE file in the root directory of this source tree.
 from __future__ import annotations
 
 import os
-import copy 
+import copy
 import torch
 import torch.nn as nn
 
@@ -29,7 +29,6 @@ from .utils.so3_layers import SO3_Linear
 
 from .utils.activation import GateActivation, SeparableS2Activation
 from .utils.so2_layers import SO2_Convolution
-
 
 
 class eSEN_Backbone(nn.Module):
@@ -71,8 +70,8 @@ class eSEN_Backbone(nn.Module):
 
         # rotation utils
         Jd_list = torch.load(os.path.join(os.path.dirname(__file__), "Jd.pt"))
-        for l in range(self.lmax + 1):
-            self.register_buffer(f"Jd_{l}", Jd_list[l])
+        for ell in range(self.lmax + 1):
+            self.register_buffer(f"Jd_{ell}", Jd_list[ell])
         self.sph_feature_size = int((self.lmax + 1) ** 2)
         self.mappingReduced = CoefficientMapping(self.lmax, self.mmax)
 
@@ -176,8 +175,8 @@ class eSEN_Backbone(nn.Module):
         )
 
         Jd_buffers = [
-            getattr(self, f"Jd_{l}").type(edge_rot_mat.dtype)
-            for l in range(self.lmax + 1)
+            getattr(self, f"Jd_{ell}").type(edge_rot_mat.dtype)
+            for ell in range(self.lmax + 1)
         ]
 
         wigner = rotation_to_wigner(
@@ -191,27 +190,24 @@ class eSEN_Backbone(nn.Module):
 
         return edge_rot_mat, wigner, wigner_inv
 
-
     def forward(self, pos, features, edge_indices, update_edge_indices=False):
         ###############################################################
         # Initialize edges
         ###############################################################
         atomic_numbers = features.long()
-        edge_distance_vec = pos[edge_indices[:, 0], :] - pos[edge_indices[:, 1] , :]
+        edge_distance_vec = pos[edge_indices[:, 0], :] - pos[edge_indices[:, 1], :]
         edge_distance = torch.norm(edge_distance_vec, dim=-1)
-        
+
         if update_edge_indices:
             indices = edge_distance < self.cutoff
             edge_indices = edge_indices[indices]
             edge_distance_vec = edge_distance_vec[indices]
             edge_distance = edge_distance[indices]
-        
+
         edge_indices = edge_indices.T
-        
-        _, wigner, wigner_inv = self.get_rotmat_and_wigner(
-            edge_distance_vec
-        )
-    
+
+        _, wigner, wigner_inv = self.get_rotmat_and_wigner(edge_distance_vec)
+
         ###############################################################
         # Initialize node embeddings
         ###############################################################
@@ -227,12 +223,8 @@ class eSEN_Backbone(nn.Module):
 
         # edge degree embedding
         edge_distance_embedding = self.distance_expansion(edge_distance)
-        source_embedding = self.source_embedding(
-            atomic_numbers[edge_indices[0]]
-        )
-        target_embedding = self.target_embedding(
-            atomic_numbers[edge_indices[1]]
-        )
+        source_embedding = self.source_embedding(atomic_numbers[edge_indices[0]])
+        target_embedding = self.target_embedding(atomic_numbers[edge_indices[1]])
         x_edge = torch.cat(
             (edge_distance_embedding, source_embedding, target_embedding), dim=1
         )
@@ -274,6 +266,7 @@ class eSEN_Backbone(nn.Module):
         x_message = self.norm(x_message)
         return x_message
 
+
 class MLP_Energy_Head(nn.Module):
     def __init__(self, backbone):
         super().__init__()
@@ -289,9 +282,9 @@ class MLP_Energy_Head(nn.Module):
         )
 
     def forward(self, node_embedding, atom_sctr_indices, batch_size):
-        node_energy = self.energy_block(
-            node_embedding.narrow(1, 0, 1).squeeze()
-        ).view(-1, 1, 1)
+        node_energy = self.energy_block(node_embedding.narrow(1, 0, 1).squeeze()).view(
+            -1, 1, 1
+        )
 
         energy = torch.zeros(
             batch_size,
@@ -301,6 +294,7 @@ class MLP_Energy_Head(nn.Module):
 
         energy.scatter_add_(0, atom_sctr_indices, node_energy.view(-1))
         return energy
+
 
 class Linear_Force_Head(nn.Module):
     def __init__(self, backbone):
@@ -312,7 +306,8 @@ class Linear_Force_Head(nn.Module):
         forces = forces.narrow(1, 1, 3)
         forces = forces.view(-1, 3).contiguous()
         return forces
-    
+
+
 class Edgewise(torch.nn.Module):
     def __init__(
         self,

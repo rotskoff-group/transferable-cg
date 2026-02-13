@@ -1,11 +1,8 @@
-import argparse
 import logging
-import os
 from typing import Dict, List, Tuple
 
 import torch
 
-from cgp.nn.mace.modules.cue_utils import CuEquivarianceConfig
 from e3nn import o3
 
 
@@ -71,7 +68,7 @@ def convert_weights(
 ):
     max_L = o3.Irreps(model_params["hidden_irreps"]).lmax
     correlation = model_params["correlation"]
-    
+
     # Transfer main weights
     transfer_keys = get_transfer_keys()
     for key in transfer_keys:
@@ -81,11 +78,17 @@ def convert_weights(
             logging.warning(f"Key {key} not found in source model")
 
     # Transfer symmetric contractions
-    target_dict = transfer_symmetric_contractions(source_dict, target_dict, max_L, correlation)
+    target_dict = transfer_symmetric_contractions(
+        source_dict, target_dict, max_L, correlation
+    )
 
     # Unsqueeze linear and skip_tp layers
     for key in source_dict.keys():
-        if any(x in key for x in ["linear", "skip_tp"]) and "weight" in key and "nn." in key:
+        if (
+            any(x in key for x in ["linear", "skip_tp"])
+            and "weight" in key
+            and "nn." in key
+        ):
             target_dict[key] = target_dict[key].unsqueeze(0)
 
     # Transfer remaining matching keys
@@ -105,9 +108,5 @@ def convert_weights(
                     f"Shape mismatch for key {key}: "
                     f"source {source_dict[key].shape} vs target {target_dict[key].shape}"
                 )
-    
+
     return target_dict
-
-   
-
-

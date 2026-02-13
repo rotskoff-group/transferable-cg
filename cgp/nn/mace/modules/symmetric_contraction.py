@@ -108,7 +108,7 @@ class Contraction(torch.nn.Module):
                 dtype=dtype,
             )[-1]
             self.register_buffer(f"U_matrix_{nu}", U_matrix)
-        
+
         # Tensor contraction equations
         self.contractions_weighting = torch.nn.ModuleList()
         self.contractions_features = torch.nn.ModuleList()
@@ -226,7 +226,7 @@ class Contraction(torch.nn.Module):
             )
             c_tensor = c_tensor + out
             out = contract_features(c_tensor, x)
-        
+
         return out.view(out.shape[0], -1)
 
     def U_tensors(self, nu: int):

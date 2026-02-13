@@ -1,8 +1,6 @@
 import os
 import hydra
-from cgp.nn import (create_dataset_from_path,
-                    create_lightning_model,
-                    create_dataloaders)
+from cgp.nn import create_dataset_from_path, create_lightning_model, create_dataloaders
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
@@ -23,10 +21,10 @@ def main(cfg):
         prior_config = None
 
     L.seed_everything(**train_config["seed_args"])
-    u_model = create_lightning_model(nn_config=nn_config,
-                                     prior_config=prior_config,
-                                     train_config=train_config)
-    
+    u_model = create_lightning_model(
+        nn_config=nn_config, prior_config=prior_config, train_config=train_config
+    )
+
     warnings.warn("Not checking dataset validity")
     if train_config["lightning_model_args"]["loss_type"] == "force matching":
         requires_forces = True
@@ -35,33 +33,41 @@ def main(cfg):
         requires_forces = False
         requires_energies = False
     else:
-        raise ValueError(f"Unknown loss type: {train_config['lightning_model_args']['loss_type']}")
-    dataset = create_dataset_from_path(dataset_config["model"], dataset_config["dataset_folder_name"], 
-                                       dataset_config["data_in_memory"], dataset_config["edge_args"],
-                                       individual_protein_dataset=dataset_config["individual_protein_datasets"],
-                                       requires_forces=requires_forces,
-                                       requires_energies=requires_energies,
-                                       requires_esm2_embeddings="Transformer" in nn_config["model"],
-                                       random_rotate=nn_config["model"] == "NonEqTransformer")
+        raise ValueError(
+            f"Unknown loss type: {train_config['lightning_model_args']['loss_type']}"
+        )
+    dataset = create_dataset_from_path(
+        dataset_config["model"],
+        dataset_config["dataset_folder_name"],
+        dataset_config["data_in_memory"],
+        dataset_config["edge_args"],
+        individual_protein_dataset=dataset_config["individual_protein_datasets"],
+        requires_forces=requires_forces,
+        requires_energies=requires_energies,
+    )
 
     if dataset_config["adaption_dataset_folder_name"] is not None:
-        adaption_dataset = create_dataset_from_path(dataset_config["model"], dataset_config["adaption_dataset_folder_name"], 
-                                       dataset_config["data_in_memory"], dataset_config["edge_args"],
-                                       requires_forces=requires_forces,
-                                       requires_energies=requires_energies,
-                                       requires_esm2_embeddings="Transformer" in nn_config["model"],
-                                       random_rotate=nn_config["model"] == "NonEqTransformer")
+        adaption_dataset = create_dataset_from_path(
+            dataset_config["model"],
+            dataset_config["adaption_dataset_folder_name"],
+            dataset_config["data_in_memory"],
+            dataset_config["edge_args"],
+            requires_forces=requires_forces,
+            requires_energies=requires_energies,
+        )
     else:
         adaption_dataset = None
-    train_dataloader, val_dataloader, test_dataloader = create_dataloaders(dataset,
-                                                        nn_config, 
-                                                        prior_config,
-                                                        dataset_config,
-                                                        adaption_dataset=adaption_dataset,
-                                                        train_dataset_fraction=dataset_config["train_dataset_fraction"],
-                                                        requires_forces=requires_forces,
-                                                        requires_energies=requires_energies)
-    
+    train_dataloader, val_dataloader, test_dataloader = create_dataloaders(
+        dataset,
+        nn_config,
+        prior_config,
+        dataset_config,
+        adaption_dataset=adaption_dataset,
+        train_dataset_fraction=dataset_config["train_dataset_fraction"],
+        requires_forces=requires_forces,
+        requires_energies=requires_energies,
+    )
+
     resume_training_path = train_config["resume_training_path"]
     if resume_training_path is not None:
         ckpt_path = resume_training_path
@@ -74,38 +80,44 @@ def main(cfg):
 
         print(f"Restarting training from {model_path}")
 
-        every_epoch_checkpoint_callback = ModelCheckpoint(filename="model_{epoch:02d}",
-                                                          every_n_train_steps=500,
-                                                          save_top_k=-1,
-                                                          dirpath=f"{model_path}/checkpoints")
-        best_checkpoint_callback = ModelCheckpoint(filename="best_model",
-                                                   monitor=train_config["lightning_model_args"]["monitor"],
-                                                   mode="min",
-                                                   save_top_k=1,
-                                                   dirpath=f"{model_path}/checkpoints")
-        logger = TensorBoardLogger(save_dir="./",
-                                   version=version_num)
+        every_epoch_checkpoint_callback = ModelCheckpoint(
+            filename="model_{epoch:02d}",
+            every_n_train_steps=500,
+            save_top_k=-1,
+            dirpath=f"{model_path}/checkpoints",
+        )
+        best_checkpoint_callback = ModelCheckpoint(
+            filename="best_model",
+            monitor=train_config["lightning_model_args"]["monitor"],
+            mode="min",
+            save_top_k=1,
+            dirpath=f"{model_path}/checkpoints",
+        )
+        logger = TensorBoardLogger(save_dir="./", version=version_num)
 
-        trainer = L.Trainer(callbacks=[every_epoch_checkpoint_callback,
-                                       best_checkpoint_callback],
-                            logger=logger,
-                            **train_config["trainer_args"])
+        trainer = L.Trainer(
+            callbacks=[every_epoch_checkpoint_callback, best_checkpoint_callback],
+            logger=logger,
+            **train_config["trainer_args"],
+        )
 
-        trainer.fit(u_model, train_dataloader, val_dataloader,
-                    ckpt_path=ckpt_path)
+        trainer.fit(u_model, train_dataloader, val_dataloader, ckpt_path=ckpt_path)
     else:
-        every_epoch_checkpoint_callback = ModelCheckpoint(filename="model_{epoch:02d}",
-                                                          every_n_train_steps=500,
-                                                          save_top_k=-1)
-        best_checkpoint_callback = ModelCheckpoint(filename="best_model",
-                                                   monitor=train_config["lightning_model_args"]["monitor"],
-                                                   mode="min",
-                                                   save_top_k=1)  
+        every_epoch_checkpoint_callback = ModelCheckpoint(
+            filename="model_{epoch:02d}", every_n_train_steps=500, save_top_k=-1
+        )
+        best_checkpoint_callback = ModelCheckpoint(
+            filename="best_model",
+            monitor=train_config["lightning_model_args"]["monitor"],
+            mode="min",
+            save_top_k=1,
+        )
         logger = TensorBoardLogger(save_dir="./")
-        trainer = L.Trainer(callbacks=[every_epoch_checkpoint_callback,
-                                       best_checkpoint_callback],
-                            logger=logger,
-                            **train_config["trainer_args"])
+        trainer = L.Trainer(
+            callbacks=[every_epoch_checkpoint_callback, best_checkpoint_callback],
+            logger=logger,
+            **train_config["trainer_args"],
+        )
 
         if trainer.global_rank == 0:
             train_folder_name = trainer.logger.log_dir

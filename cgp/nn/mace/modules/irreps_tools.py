@@ -8,7 +8,6 @@ from typing import List, Tuple
 
 import torch
 from e3nn import o3
-import cuequivariance as cue
 
 
 # Based on mir-group/nequip
@@ -43,6 +42,7 @@ def tp_out_irreps_with_instructions(
 
     return irreps_out, instructions
 
+
 class reshape_irreps(torch.nn.Module):
     def __init__(self, irreps: o3.Irreps, cueq_config) -> None:
         super().__init__()
@@ -62,15 +62,15 @@ class reshape_irreps(torch.nn.Module):
         for mul, d in zip(self.muls, self.dims):
             field = tensor[:, ix : ix + mul * d]  # [batch, sample, mul * repr]
             ix += mul * d
-            if self.cueq_config != None:
+            if self.cueq_config is not None:
                 if self.cueq_config.layout_str == "mul_ir":
                     field = field.reshape(batch, mul, d)
-                else:   
+                else:
                     field = field.reshape(batch, d, mul)
             else:
                 field = field.reshape(batch, mul, d)
             out.append(field)
-        if self.cueq_config != None:
+        if self.cueq_config is not None:
             if self.cueq_config.layout_str == "mul_ir":
                 return torch.cat(out, dim=-1)
             else:

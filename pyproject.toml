@@ -19,13 +19,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "cuequivariance==0.3.0",
-    "cuequivariance-torch==0.3.0",
-    "cuequivariance-ops-torch-cu12==0.5.1",
     "dask>=2023.5.0",
     "e3nn>=0.5.5",
     "einops>=0.8.1",
-    "esm>=3.1.3",
     "h5py>=3.11.0",
     "hydra-core>=1.3.2",
     "lightning>=2.3.3",
@@ -36,7 +32,15 @@ dependencies = [
     "torch-geometric>=2.6.1",
     "tensorboard",
     "torchtyping>=0.1.5",
-    "PyYAML"
+    "PyYAML",
+    "ruff>=0.15.1",
+]
+
+[project.optional-dependencies]
+cuda = [
+    "cuequivariance==0.3.0",
+    "cuequivariance-torch==0.3.0",
+    "cuequivariance-ops-torch-cu12==0.5.1",
 ]
 
 [tool.hatch.build.targets.sdist]
@@ -58,4 +62,3 @@ u_test = "cgp.scripts.cg.test_u:main"
 make_u_dataset = "cgp.scripts.cg.make_u_dataset:main"
 omm_sim = "cgp.scripts.omm.omm_sim:main"
 cg_sim = "cgp.scripts.cg.cg_sim:main"
-

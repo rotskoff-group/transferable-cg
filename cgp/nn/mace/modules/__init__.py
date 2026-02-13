@@ -11,12 +11,10 @@ from .blocks import (
     RadialEmbeddingBlock,
     RealAgnosticAttResidualInteractionBlock,
     RealAgnosticInteractionBlock,
-    RealAgnosticResidualInteractionBlock
+    RealAgnosticResidualInteractionBlock,
 )
 
-from .models import (
-    MACE
-)
+from .models import MACE
 from .radial import BesselBasis, GaussianBasis, PolynomialCutoff
 from .symmetric_contraction import SymmetricContraction
 from .utils import adjacency_matrix
@@ -69,4 +67,6 @@ __all__ = [
     "compute_avg_num_neighbors",
     "compute_fixed_charge_dipole",
     "adjacency_matrix",
+    "CuEquivarianceConfig",
+    "O3_e3nn",
 ]

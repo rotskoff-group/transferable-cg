@@ -1,1 +1,1 @@
-from .nn import SchNet
+from .nn import SchNet as SchNet

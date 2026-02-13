@@ -1,6 +1,6 @@
-import torch
 import torch.nn as nn
 from .blocks import eSEN_Backbone, MLP_Energy_Head, Linear_Force_Head
+
 
 class eSEN(nn.Module):
     def __init__(
@@ -12,14 +12,14 @@ class eSEN(nn.Module):
         mmax: int = 2,
         grid_resolution: int | None = None,
         edge_channels: int = 128,
-        distance_function: str = "gaussian", # gaussian or bessel
+        distance_function: str = "gaussian",  # gaussian or bessel
         num_distance_basis: int = 10,
         direct_forces: bool = False,
         # escnmd specific
         num_layers: int = 2,
         hidden_channels: int = 128,
         norm_type: str = "rms_norm_sh",
-        act_type: str = "gate", # gate or s2
+        act_type: str = "gate",  # gate or s2
         mlp_type: str = "spectral",
         use_envelope: bool = True,
         activation_checkpointing: bool = False,
@@ -46,18 +46,27 @@ class eSEN(nn.Module):
             use_envelope=use_envelope,
             activation_checkpointing=activation_checkpointing,
         )
-        
+
         self.energy_head = MLP_Energy_Head(self.backbone)
         self.force_head = Linear_Force_Head(self.backbone)
         self.direct_forces = direct_forces
-        
-    def forward(self, pos, features, edge_indices, atom_sctr_indices, 
-                batch_size, update_edge_indices=False):
-        node_embeddings = self.backbone(pos, features, edge_indices, update_edge_indices)
-        
+
+    def forward(
+        self,
+        pos,
+        features,
+        edge_indices,
+        atom_sctr_indices,
+        batch_size,
+        update_edge_indices=False,
+    ):
+        node_embeddings = self.backbone(
+            pos, features, edge_indices, update_edge_indices
+        )
+
         if self.direct_forces:
             output = self.force_head(node_embeddings)
         else:
             output = self.energy_head(node_embeddings, atom_sctr_indices, batch_size)
-            
+
         return output

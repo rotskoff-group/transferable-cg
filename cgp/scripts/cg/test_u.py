@@ -4,7 +4,6 @@ from cgp.nn import create_dataset_from_path, create_lightning_model, create_data
 import lightning as L
 from lightning.pytorch.loggers import TensorBoardLogger
 from omegaconf import OmegaConf
-import warnings
 import torch
 import numpy as np
 
@@ -41,11 +40,11 @@ def main(cfg):
         dataset_config["dataset_split_args"]["test"] = 1.0
         dataset_config["batch_size"] = 1
 
-    train_config["trainer_args"][
-        "strategy"
-    ] = "auto"  # do not use ddp since ddp replicates samples to ensure all devices have same batch size
+    train_config["trainer_args"]["strategy"] = (
+        "auto"  # do not use ddp since ddp replicates samples to ensure all devices have same batch size
+    )
     if accelerator == "cuda":
-        train_config["trainer_args"]["devices"] = 1 # use 1 GPU
+        train_config["trainer_args"]["devices"] = 1  # use 1 GPU
     else:
         train_config["trainer_args"]["devices"] = "auto"
 
@@ -65,7 +64,6 @@ def main(cfg):
             dataset_config["data_in_memory"],
             dataset_config["edge_args"],
             individual_protein_dataset=global_args.individual_protein_datasets,
-            requires_esm2_embeddings=nn_config["model"] == "Transformer"
         )
         _, _, test_dataloader = create_dataloaders(
             dataset,
@@ -87,7 +85,7 @@ def main(cfg):
             trainer.test(model=u_model, dataloaders=test_dataloader)
     else:
         all_mse = []
-        assert global_args.individual_protein_datasets != None
+        assert global_args.individual_protein_datasets is not None
         u_model.load_model_from_ckpt(ckpt_path)
         u_model.eval()
         version_num = config_path.split("/")[-2]
@@ -103,7 +101,6 @@ def main(cfg):
                 dataset_path,
                 dataset_config["data_in_memory"],
                 dataset_config["edge_args"],
-                requires_esm2_embeddings=nn_config["model"] == "Transformer"
             )
             _, _, test_dataloader = create_dataloaders(
                 dataset,

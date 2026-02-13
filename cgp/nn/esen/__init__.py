@@ -1,1 +1,1 @@
-from .nn import eSEN
+from .nn import eSEN as eSEN

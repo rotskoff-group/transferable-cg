@@ -4,10 +4,8 @@
 # This program is distributed under the MIT License (see MIT.md)
 ###########################################################################################
 
-from typing import Any, Callable, Dict, List, Optional, Type, Union, Tuple
-import numpy as np
+from typing import List, Optional, Union
 import torch
-import cuequivariance as cue
 import cuequivariance_torch as cuet
 from e3nn import o3
 from e3nn.util.jit import compile_mode
@@ -22,14 +20,12 @@ from .blocks import (
     LinearNodeEmbeddingBlock,
     LinearReadoutBlock,
     NonLinearReadoutBlock,
-    RadialEmbeddingBlock
+    RadialEmbeddingBlock,
 )
-from .utils import (
-    get_edge_vectors_and_lengths
-)
-from .scatter import scatter_sum
+from .utils import get_edge_vectors_and_lengths
 
 # pylint: disable=C0302
+
 
 @compile_mode("script")
 class MACE(torch.nn.Module):
@@ -67,20 +63,21 @@ class MACE(torch.nn.Module):
             choices: bessel, gaussian
 
     """
+
     def __init__(
         self,
         nn_cutoff: float = 20.0,
-        num_bessel: int = 8, 
-        num_polynomial_cutoff: int = 5, 
-        max_ell: int = 3, 
-        interaction_cls: str = "RealAgnosticResidualInteractionBlock", 
+        num_bessel: int = 8,
+        num_polynomial_cutoff: int = 5,
+        max_ell: int = 3,
+        interaction_cls: str = "RealAgnosticResidualInteractionBlock",
         interaction_cls_first: str = "RealAgnosticResidualInteractionBlock",
-        num_interactions: int = 2, 
+        num_interactions: int = 2,
         hidden_irreps: str = "128x0e + 128x1o",
-        MLP_irreps: str = "16x0e", 
+        MLP_irreps: str = "16x0e",
         avg_num_neighbors: float = 1.0,
-        correlation: Union[int, List[int]] = 3, 
-        gate: str = "silu", 
+        correlation: Union[int, List[int]] = 3,
+        gate: str = "silu",
         radial_MLP: Optional[List[int]] = [],
         radial_type: Optional[str] = "bessel",
         max_z: int = None,
@@ -89,12 +86,12 @@ class MACE(torch.nn.Module):
         super().__init__()
         if use_cueq:
             self.cueq_config = CuEquivarianceConfig(
-                    enabled=True,
-                    layout="ir_mul",
-                    group="O3_e3nn",
-                    optimize_all=True,
-                    conv_fusion=True, #TODO: True if CUDA is available
-                )
+                enabled=True,
+                layout="ir_mul",
+                group="O3_e3nn",
+                optimize_all=True,
+                conv_fusion=True,  # TODO: True if CUDA is available
+            )
         else:
             self.cueq_config = None
         if max_z is None:
@@ -111,16 +108,16 @@ class MACE(torch.nn.Module):
         if isinstance(correlation, int):
             correlation = [correlation] * num_interactions
         gate = modules.gate_dict[gate]
-  
+
         # Embedding
         hidden_irreps = o3.Irreps(hidden_irreps)
         MLP_irreps = o3.Irreps(MLP_irreps)
-        node_attr_irreps = o3.Irreps([(self.max_z , (0, 1))]) # max_z scaler values 
+        node_attr_irreps = o3.Irreps([(self.max_z, (0, 1))])  # max_z scaler values
         node_feats_irreps = o3.Irreps([(hidden_irreps.count(o3.Irrep(0, 1)), (0, 1))])
         self.node_embedding = LinearNodeEmbeddingBlock(
-            irreps_in=node_attr_irreps, 
-            irreps_out=node_feats_irreps, 
-            cueq_config=self.cueq_config
+            irreps_in=node_attr_irreps,
+            irreps_out=node_feats_irreps,
+            cueq_config=self.cueq_config,
         )
         self.radial_embedding = RadialEmbeddingBlock(
             r_max=nn_cutoff,
@@ -133,16 +130,16 @@ class MACE(torch.nn.Module):
         sh_irreps = o3.Irreps.spherical_harmonics(max_ell)
         num_features = hidden_irreps.count(o3.Irrep(0, 1))
         interaction_irreps = (sh_irreps * num_features).sort()[0].simplify()
-        
+
         if use_cueq:
             self.spherical_harmonics = cuet.SphericalHarmonics(
                 sh_irreps.ls, normalize=True
             )
         else:
-            self.spherical_harmonics = o3.SphericalHarmonics( 
+            self.spherical_harmonics = o3.SphericalHarmonics(
                 sh_irreps, normalize=True, normalization="component"
             )
-        
+
         if radial_MLP is None:
             radial_MLP = [64, 64, 64]
         # Interactions and readout
@@ -179,7 +176,9 @@ class MACE(torch.nn.Module):
         self.products = torch.nn.ModuleList([prod])
 
         self.readouts = torch.nn.ModuleList()
-        self.readouts.append(LinearReadoutBlock(hidden_irreps, cueq_config=self.cueq_config))
+        self.readouts.append(
+            LinearReadoutBlock(hidden_irreps, cueq_config=self.cueq_config)
+        )
 
         for i in range(num_interactions - 1):
             if i == num_interactions - 2:
@@ -204,23 +203,29 @@ class MACE(torch.nn.Module):
                 node_feats_irreps=interaction_irreps,
                 target_irreps=hidden_irreps_out,
                 correlation=correlation[i + 1],
-                num_elements=self.max_z, 
+                num_elements=self.max_z,
                 use_sc=True,
                 cueq_config=self.cueq_config,
             )
             self.products.append(prod)
             if i == num_interactions - 2:
                 self.readouts.append(
-                    NonLinearReadoutBlock(hidden_irreps_out, MLP_irreps, 
-                                          cueq_config=self.cueq_config, gate = gate)
+                    NonLinearReadoutBlock(
+                        hidden_irreps_out,
+                        MLP_irreps,
+                        cueq_config=self.cueq_config,
+                        gate=gate,
+                    )
                 )
             else:
-                self.readouts.append(LinearReadoutBlock(hidden_irreps, cueq_config=self.cueq_config))
-    
-    def adjacency_matrix(self, positions : torch.Tensor) -> torch.Tensor:
+                self.readouts.append(
+                    LinearReadoutBlock(hidden_irreps, cueq_config=self.cueq_config)
+                )
+
+    def adjacency_matrix(self, positions: torch.Tensor) -> torch.Tensor:
         return adj_matrix_wrapper(positions, self.r_max)
 
-    def create_one_hot_encoding(self, labels : torch.Tensor):
+    def create_one_hot_encoding(self, labels: torch.Tensor):
         """
         labels: list of tuples (atom type, residue type)
         max_zs: Maximum number of residue types and atom types (max residue, max atom)
@@ -228,29 +233,41 @@ class MACE(torch.nn.Module):
         # index = [int((labels[0] * max_zs[1]) + labels[1]) for labels in labels]
         # return torch.nn.functional.one_hot(torch.tensor(index), max_zs[0] *
         #             max_zs[1]).type(torch.float32).to(labels.device)
-        return torch.nn.functional.one_hot(labels, self.max_z).type(torch.float32).to(labels.device)
+        return (
+            torch.nn.functional.one_hot(labels, self.max_z)
+            .type(torch.float32)
+            .to(labels.device)
+        )
 
     def forward(
         self,
         positions: torch.Tensor,
-        features : torch.Tensor,
-        edge_indices : torch.Tensor = torch.zeros(0, dtype=torch.int64),
-        atom_sctr_indices : torch.Tensor = torch.zeros(0, dtype=torch.int64),
-        batch_size : Optional[int] = None,
-        update_edge_indices : bool = False, 
+        features: torch.Tensor,
+        edge_indices: torch.Tensor = torch.zeros(0, dtype=torch.int64),
+        atom_sctr_indices: torch.Tensor = torch.zeros(0, dtype=torch.int64),
+        batch_size: Optional[int] = None,
+        update_edge_indices: bool = False,
     ) -> torch.Tensor:
         node_attrs = self.create_one_hot_encoding(features)
 
         # Embeddings
         node_feats = self.node_embedding(node_attrs)
         if update_edge_indices:
-            edge_indices = edge_indices[(torch.norm(positions[edge_indices[:, 0]] - positions[edge_indices[:, 1]], dim=-1)) < self.r_max]
+            edge_indices = edge_indices[
+                (
+                    torch.norm(
+                        positions[edge_indices[:, 0]] - positions[edge_indices[:, 1]],
+                        dim=-1,
+                    )
+                )
+                < self.r_max
+            ]
 
         edge_index = edge_indices.T
         vectors, lengths = get_edge_vectors_and_lengths(
             positions=positions,
             edge_index=edge_index,
-            #shifts=data["shifts"],
+            # shifts=data["shifts"],
         )
         edge_attrs = self.spherical_harmonics(vectors)
         edge_feats = self.radial_embedding(lengths)
@@ -276,7 +293,7 @@ class MACE(torch.nn.Module):
             )
             node_feats_list.append(node_feats)
             node_energies = readout(node_feats).squeeze(-1)  # [n_nodes, ]
-            energy = torch.zeros(batch_size, dtype = positions.dtype).to(positions.device)
+            energy = torch.zeros(batch_size, dtype=positions.dtype).to(positions.device)
             # energy = scatter_sum(node_energies, atom_sctr_indices)  # [n_graphs,]
             energy.scatter_add_(0, atom_sctr_indices, node_energies)
             energies.append(energy)

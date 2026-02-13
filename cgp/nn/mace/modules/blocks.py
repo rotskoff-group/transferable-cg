@@ -26,14 +26,16 @@ from .irreps_tools import (
 )
 from .radial import BesselBasis, GaussianBasis, PolynomialCutoff
 
+
 class Linear:
-    def __new__(cls,
-                irreps_in: o3.Irreps,
-                irreps_out: o3.Irreps,
-                shared_weights: bool = True,
-                internal_weights: bool = True,
-                cueq_config: Optional[CuEquivarianceConfig] = None
-                ):
+    def __new__(
+        cls,
+        irreps_in: o3.Irreps,
+        irreps_out: o3.Irreps,
+        shared_weights: bool = True,
+        internal_weights: bool = True,
+        cueq_config: Optional[CuEquivarianceConfig] = None,
+    ):
         if cueq_config is None:
             return o3.Linear(
                 irreps_in,
@@ -41,15 +43,14 @@ class Linear:
                 shared_weights=shared_weights,
                 internal_weights=internal_weights,
             )
-        
-        return cuet.Linear(
-                cue.Irreps(cueq_config.group, irreps_in),
-                cue.Irreps(cueq_config.group, irreps_out),
-                layout=cueq_config.layout,
-                shared_weights=shared_weights,
-                use_fallback=True,
-            )
 
+        return cuet.Linear(
+            cue.Irreps(cueq_config.group, irreps_in),
+            cue.Irreps(cueq_config.group, irreps_out),
+            layout=cueq_config.layout,
+            shared_weights=shared_weights,
+            use_fallback=True,
+        )
 
 
 def with_scatter_sum(conv_tp: torch.nn.Module) -> torch.nn.Module:
@@ -73,8 +74,10 @@ def with_scatter_sum(conv_tp: torch.nn.Module) -> torch.nn.Module:
     conv_tp.forward = types.MethodType(forward, conv_tp)
     return conv_tp
 
+
 class TensorProduct:
     """Wrapper around o3.TensorProduct/cuet.ChannelwiseTensorProduct/oeq.TensorProduct followed by a scatter sum"""
+
     def __new__(
         cls,
         irreps_in1: o3.Irreps,
@@ -83,30 +86,34 @@ class TensorProduct:
         instructions: Optional[List] = None,
         shared_weights: bool = False,
         internal_weights: bool = False,
-        cueq_config: Optional[CuEquivarianceConfig] = None
+        cueq_config: Optional[CuEquivarianceConfig] = None,
     ):
         if cueq_config is None:
-            return with_scatter_sum(o3.TensorProduct(
-            irreps_in1,
-            irreps_in2,
-            irreps_out,
-            instructions=instructions,
-            shared_weights=shared_weights,
-            internal_weights=internal_weights,
-        ))
- 
+            return with_scatter_sum(
+                o3.TensorProduct(
+                    irreps_in1,
+                    irreps_in2,
+                    irreps_out,
+                    instructions=instructions,
+                    shared_weights=shared_weights,
+                    internal_weights=internal_weights,
+                )
+            )
+
         return with_scatter_sum(
-                    cuet.ChannelWiseTensorProduct(
-                        cue.Irreps(cueq_config.group, irreps_in1),
-                        cue.Irreps(cueq_config.group, irreps_in2),
-                        cue.Irreps(cueq_config.group, irreps_out),
-                        layout=cueq_config.layout,
-                        shared_weights=shared_weights,
-                        internal_weights=internal_weights,
-                        dtype=torch.get_default_dtype(),
-                        math_dtype=torch.get_default_dtype(),
-                ))
-    
+            cuet.ChannelWiseTensorProduct(
+                cue.Irreps(cueq_config.group, irreps_in1),
+                cue.Irreps(cueq_config.group, irreps_in2),
+                cue.Irreps(cueq_config.group, irreps_out),
+                layout=cueq_config.layout,
+                shared_weights=shared_weights,
+                internal_weights=internal_weights,
+                dtype=torch.get_default_dtype(),
+                math_dtype=torch.get_default_dtype(),
+            )
+        )
+
+
 class FullyConnectedTensorProduct:
     """Wrapper around o3.FullyConnectedTensorProduct/cuet.FullyConnectedTensorProduct"""
 
@@ -121,12 +128,12 @@ class FullyConnectedTensorProduct:
     ):
         if cueq_config is None:
             return o3.FullyConnectedTensorProduct(
-            irreps_in1,
-            irreps_in2,
-            irreps_out,
-            shared_weights=shared_weights,
-            internal_weights=internal_weights,
-        )
+                irreps_in1,
+                irreps_in2,
+                irreps_out,
+                shared_weights=shared_weights,
+                internal_weights=internal_weights,
+            )
 
         return cuet.FullyConnectedTensorProduct(
             cue.Irreps(cueq_config.group, irreps_in1),
@@ -137,6 +144,7 @@ class FullyConnectedTensorProduct:
             internal_weights=internal_weights,
             use_fallback=True,
         )
+
 
 class SymmetricContractionWrapper:
     """Wrapper around SymmetricContraction/cuet.SymmetricContraction"""
@@ -157,27 +165,32 @@ class SymmetricContractionWrapper:
                 correlation=correlation,
                 num_elements=num_elements,
             )
-            
+
         return cuet.SymmetricContraction(
-                cue.Irreps(cueq_config.group, irreps_in),
-                cue.Irreps(cueq_config.group, irreps_out),
-                layout_in=cue.ir_mul,
-                layout_out=cueq_config.layout,
-                contraction_degree=correlation,
-                num_elements=num_elements,
-                original_mace=True,
-                dtype=torch.get_default_dtype(),
-                math_dtype=torch.get_default_dtype(),
-            )
-        
+            cue.Irreps(cueq_config.group, irreps_in),
+            cue.Irreps(cueq_config.group, irreps_out),
+            layout_in=cue.ir_mul,
+            layout_out=cueq_config.layout,
+            contraction_degree=correlation,
+            num_elements=num_elements,
+            original_mace=True,
+            dtype=torch.get_default_dtype(),
+            math_dtype=torch.get_default_dtype(),
+        )
+
+
 @compile_mode("script")
 class LinearNodeEmbeddingBlock(torch.nn.Module):
-    def __init__(self, irreps_in: o3.Irreps, irreps_out: o3.Irreps, 
-                 cueq_config: CuEquivarianceConfig):
+    def __init__(
+        self,
+        irreps_in: o3.Irreps,
+        irreps_out: o3.Irreps,
+        cueq_config: CuEquivarianceConfig,
+    ):
         super().__init__()
-        self.linear = Linear(irreps_in=irreps_in, 
-                            irreps_out=irreps_out,
-                            cueq_config=cueq_config)
+        self.linear = Linear(
+            irreps_in=irreps_in, irreps_out=irreps_out, cueq_config=cueq_config
+        )
 
     def forward(
         self,
@@ -190,37 +203,40 @@ class LinearNodeEmbeddingBlock(torch.nn.Module):
 class LinearReadoutBlock(torch.nn.Module):
     def __init__(self, irreps_in: o3.Irreps, cueq_config: CuEquivarianceConfig):
         super().__init__()
-        self.linear = Linear(irreps_in=irreps_in, 
-                            irreps_out=o3.Irreps("0e"),
-                            cueq_config=cueq_config)
+        self.linear = Linear(
+            irreps_in=irreps_in, irreps_out=o3.Irreps("0e"), cueq_config=cueq_config
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:  # [n_nodes, irreps]  # [..., ]
         return self.linear(x)  # [n_nodes, 1]
+
 
 @simplify_if_compile
 @compile_mode("script")
 class NonLinearReadoutBlock(torch.nn.Module):
     def __init__(
-        self, irreps_in: o3.Irreps, 
-              MLP_irreps: o3.Irreps,
-              cueq_config: CuEquivarianceConfig, 
-              gate: Optional[Callable]
+        self,
+        irreps_in: o3.Irreps,
+        MLP_irreps: o3.Irreps,
+        cueq_config: CuEquivarianceConfig,
+        gate: Optional[Callable],
     ):
         super().__init__()
         self.hidden_irreps = MLP_irreps
-        self.linear_1 = Linear(irreps_in=irreps_in, 
-                                 irreps_out=self.hidden_irreps,
-                                 cueq_config=cueq_config)
-        self.non_linearity = nn.Activation(irreps_in=self.hidden_irreps, acts=[gate]) 
+        self.linear_1 = Linear(
+            irreps_in=irreps_in, irreps_out=self.hidden_irreps, cueq_config=cueq_config
+        )
+        self.non_linearity = nn.Activation(irreps_in=self.hidden_irreps, acts=[gate])
         self.linear_2 = Linear(
-            irreps_in=self.hidden_irreps, 
+            irreps_in=self.hidden_irreps,
             irreps_out=o3.Irreps("0e"),
-            cueq_config=cueq_config
+            cueq_config=cueq_config,
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:  # [n_nodes, irreps]  # [..., ]
         x = self.non_linearity(self.linear_1(x))
         return self.linear_2(x)  # [n_nodes, 1]
+
 
 @compile_mode("script")
 class AtomicEnergiesBlock(torch.nn.Module):
@@ -236,13 +252,15 @@ class AtomicEnergiesBlock(torch.nn.Module):
         )  # [n_elements, ]
 
     def forward(
-        self, x: torch.Tensor  # one-hot of elements [..., n_elements]
+        self,
+        x: torch.Tensor,  # one-hot of elements [..., n_elements]
     ) -> torch.Tensor:  # [..., ]
         return torch.matmul(x, self.atomic_energies)
 
     def __repr__(self):
         formatted_energies = ", ".join([f"{x:.4f}" for x in self.atomic_energies])
         return f"{self.__class__.__name__}(energies=[{formatted_energies}])"
+
 
 @compile_mode("script")
 class RadialEmbeddingBlock(torch.nn.Module):
@@ -269,6 +287,7 @@ class RadialEmbeddingBlock(torch.nn.Module):
         cutoff = self.cutoff_fn(edge_lengths)  # [n_edges, 1]
         return radial * cutoff  # [n_edges, n_basis]
 
+
 @compile_mode("script")
 class EquivariantProductBasisBlock(torch.nn.Module):
     def __init__(
@@ -284,12 +303,13 @@ class EquivariantProductBasisBlock(torch.nn.Module):
 
         self.use_sc = use_sc
         self.symmetric_contractions = SymmetricContractionWrapper(
-            irreps_in = node_feats_irreps,
-            irreps_out = target_irreps,
-            correlation = correlation,
-            num_elements = num_elements,
-            cueq_config = cueq_config)
-        
+            irreps_in=node_feats_irreps,
+            irreps_out=target_irreps,
+            correlation=correlation,
+            num_elements=num_elements,
+            cueq_config=cueq_config,
+        )
+
         # Update linear
         self.linear = Linear(
             target_irreps,
@@ -308,7 +328,9 @@ class EquivariantProductBasisBlock(torch.nn.Module):
     ) -> torch.Tensor:
         if self.cueq_config is not None:
             if self.cueq_config.layout_str == "mul_ir":
-                node_feats = torch.transpose(node_feats, 1, 2)  # [n_nodes, irreps, channels]
+                node_feats = torch.transpose(
+                    node_feats, 1, 2
+                )  # [n_nodes, irreps, channels]
             index_attrs = torch.nonzero(node_attrs)[:, 1].int()
             node_feats = self.symmetric_contractions(node_feats.flatten(1), index_attrs)
         else:
@@ -316,6 +338,7 @@ class EquivariantProductBasisBlock(torch.nn.Module):
         if self.use_sc and sc is not None:
             return self.linear(node_feats) + sc
         return self.linear(node_feats)
+
 
 @compile_mode("script")
 class InteractionBlock(torch.nn.Module):
@@ -364,6 +387,7 @@ class InteractionBlock(torch.nn.Module):
 
 nonlinearities = {1: torch.nn.functional.silu, -1: torch.tanh}
 
+
 @compile_mode("script")
 class RealAgnosticInteractionBlock(InteractionBlock):
     def _setup(self) -> None:
@@ -371,7 +395,7 @@ class RealAgnosticInteractionBlock(InteractionBlock):
         self.linear_up = Linear(
             self.node_feats_irreps,
             self.node_feats_irreps,
-            cueq_config = self.cueq_config,
+            cueq_config=self.cueq_config,
             internal_weights=True,
             shared_weights=True,
         )
@@ -389,7 +413,7 @@ class RealAgnosticInteractionBlock(InteractionBlock):
             instructions=instructions,
             shared_weights=False,
             internal_weights=False,
-            cueq_config = self.cueq_config
+            cueq_config=self.cueq_config,
         )
 
         # Convolution weights
@@ -400,22 +424,22 @@ class RealAgnosticInteractionBlock(InteractionBlock):
         )
 
         # Linear
-        #irreps_mid = irreps_mid.simplify()
+        # irreps_mid = irreps_mid.simplify()
         self.irreps_out = self.target_irreps
         self.linear = Linear(
-            irreps_mid, 
-            self.irreps_out, 
-            cueq_config=self.cueq_config, 
-            internal_weights=True, 
-            shared_weights=True
+            irreps_mid,
+            self.irreps_out,
+            cueq_config=self.cueq_config,
+            internal_weights=True,
+            shared_weights=True,
         )
 
         # Selector TensorProduct
         self.skip_tp = FullyConnectedTensorProduct(
-            self.irreps_out, 
-            self.node_attrs_irreps, 
-            self.irreps_out, 
-            cueq_config=self.cueq_config
+            self.irreps_out,
+            self.node_attrs_irreps,
+            self.irreps_out,
+            cueq_config=self.cueq_config,
         )
         self.reshape = reshape_irreps(self.irreps_out, cueq_config=self.cueq_config)
 
@@ -437,6 +461,7 @@ class RealAgnosticInteractionBlock(InteractionBlock):
             None,
         )
 
+
 @compile_mode("script")
 class RealAgnosticResidualInteractionBlock(InteractionBlock):
     def _setup(self) -> None:
@@ -446,7 +471,7 @@ class RealAgnosticResidualInteractionBlock(InteractionBlock):
             self.node_feats_irreps,
             internal_weights=True,
             shared_weights=True,
-            cueq_config=self.cueq_config
+            cueq_config=self.cueq_config,
         )
         # TensorProduct
         irreps_mid, instructions = tp_out_irreps_with_instructions(
@@ -454,7 +479,7 @@ class RealAgnosticResidualInteractionBlock(InteractionBlock):
             self.edge_attrs_irreps,
             self.target_irreps,
         )
-        
+
         self.conv_tp = TensorProduct(
             self.node_feats_irreps,
             self.edge_attrs_irreps,
@@ -462,7 +487,7 @@ class RealAgnosticResidualInteractionBlock(InteractionBlock):
             instructions=instructions,
             shared_weights=False,
             internal_weights=False,
-            cueq_config = self.cueq_config
+            cueq_config=self.cueq_config,
         )
 
         # Convolution weights
@@ -475,22 +500,21 @@ class RealAgnosticResidualInteractionBlock(InteractionBlock):
         # Linear
         self.irreps_out = self.target_irreps
         self.linear = Linear(
-            irreps_mid, 
-            self.irreps_out, 
+            irreps_mid,
+            self.irreps_out,
             cueq_config=self.cueq_config,
-            internal_weights=True, 
-            shared_weights=True
+            internal_weights=True,
+            shared_weights=True,
         )
 
         # Selector TensorProduct
         self.skip_tp = FullyConnectedTensorProduct(
-            self.node_feats_irreps, 
-            self.node_attrs_irreps, 
-            self.hidden_irreps, 
-            cueq_config=self.cueq_config
+            self.node_feats_irreps,
+            self.node_attrs_irreps,
+            self.hidden_irreps,
+            cueq_config=self.cueq_config,
         )
-        self.reshape = reshape_irreps(self.irreps_out, 
-                                      cueq_config=self.cueq_config)
+        self.reshape = reshape_irreps(self.irreps_out, cueq_config=self.cueq_config)
 
     def forward(
         self,
@@ -509,6 +533,7 @@ class RealAgnosticResidualInteractionBlock(InteractionBlock):
             self.reshape(message),
             sc,
         )  # [n_nodes, channels, (lmax + 1)**2]
+
 
 @compile_mode("script")
 class RealAgnosticAttResidualInteractionBlock(InteractionBlock):
@@ -536,7 +561,7 @@ class RealAgnosticAttResidualInteractionBlock(InteractionBlock):
             instructions=instructions,
             shared_weights=False,
             internal_weights=False,
-            cueq_config = self.cueq_config
+            cueq_config=self.cueq_config,
         )
 
         # Convolution weights
@@ -570,11 +595,13 @@ class RealAgnosticAttResidualInteractionBlock(InteractionBlock):
         self.reshape = reshape_irreps(self.irreps_out, cueq_config=self.cueq_config)
 
         # Skip connection.
-        self.skip_linear = Linear(self.node_feats_irreps, 
-                                       self.hidden_irreps,
-                                       cueq_config=self.cueq_config,
-                                       internal_weights=True,
-                                       shared_weights=True)
+        self.skip_linear = Linear(
+            self.node_feats_irreps,
+            self.hidden_irreps,
+            cueq_config=self.cueq_config,
+            internal_weights=True,
+            shared_weights=True,
+        )
 
     def forward(
         self,
@@ -586,7 +613,6 @@ class RealAgnosticAttResidualInteractionBlock(InteractionBlock):
     ) -> Tuple[torch.Tensor, None]:
         sender = edge_index[0]
         receiver = edge_index[1]
-        num_nodes = node_feats.shape[0]
         sc = self.skip_linear(node_feats)
         node_feats_up = self.linear_up(node_feats)
         node_feats_down = self.linear_down(node_feats)
@@ -605,4 +631,3 @@ class RealAgnosticAttResidualInteractionBlock(InteractionBlock):
             self.reshape(message),
             sc,
         )
-

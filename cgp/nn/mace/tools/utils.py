@@ -2,6 +2,7 @@ from typing import Any, Dict
 import torch
 from e3nn import o3
 
+
 def extract_config_mace_model(model: torch.nn.Module) -> Dict[str, Any]:
     def radial_to_name(radial_type):
         if radial_type == "BesselBasis":
@@ -47,6 +48,6 @@ def extract_config_mace_model(model: torch.nn.Module) -> Dict[str, Any]:
         "radial_type": radial_to_name(
             model.radial_embedding.bessel_fn.__class__.__name__
         ),
-        "use_cueq": model.cueq_config != None
+        "use_cueq": model.cueq_config is not None,
     }
     return config

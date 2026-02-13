@@ -37,12 +37,12 @@ class CoefficientMapping(torch.nn.Module):
         m_harmonic = torch.tensor([]).long()
         m_complex = torch.tensor([]).long()
 
-        for l in range(self.lmax + 1):
-            mmax = min(self.mmax, l)
+        for ell in range(self.lmax + 1):
+            mmax = min(self.mmax, ell)
             m = torch.arange(-mmax, mmax + 1).long()
             m_complex = torch.cat([m_complex, m], dim=0)
             m_harmonic = torch.cat([m_harmonic, torch.abs(m).long()], dim=0)
-            l_harmonic = torch.cat([l_harmonic, m.fill_(l).long()], dim=0)
+            l_harmonic = torch.cat([l_harmonic, m.fill_(ell).long()], dim=0)
         self.res_size = len(l_harmonic)
 
         num_coefficients = len(l_harmonic)
@@ -101,13 +101,15 @@ class CoefficientMapping(torch.nn.Module):
         Pre-compute the results of `coefficient_idx()` and access them with `prepare_coefficient_idx()`
         """
         lmax = self.lmax
-        for l in range(lmax + 1):
+        for ell in range(lmax + 1):
             for m in range(lmax + 1):
-                mask = torch.bitwise_and(self.l_harmonic.le(l), self.m_harmonic.le(m))
+                mask = torch.bitwise_and(
+                    self.l_harmonic.le(ell), self.m_harmonic.le(m)
+                )
                 indices = torch.arange(len(mask))
                 mask_indices = torch.masked_select(indices, mask)
                 self.register_buffer(
-                    f"coefficient_idx_l{l}_m{m}", mask_indices, persistent=False
+                    f"coefficient_idx_l{ell}_m{m}", mask_indices, persistent=False
                 )
 
     def prepare_coefficient_idx(self):
@@ -116,10 +118,10 @@ class CoefficientMapping(torch.nn.Module):
         """
         lmax = self.lmax
         coefficient_idx_list = []
-        for l in range(lmax + 1):
+        for ell in range(lmax + 1):
             l_list = []
             for m in range(lmax + 1):
-                l_list.append(getattr(self, f"coefficient_idx_l{l}_m{m}", None))
+                l_list.append(getattr(self, f"coefficient_idx_l{ell}_m{m}", None))
             coefficient_idx_list.append(l_list)
         return coefficient_idx_list
 
@@ -135,13 +137,13 @@ class CoefficientMapping(torch.nn.Module):
 
     def pre_compute_rotate_inv_rescale(self):
         lmax = self.lmax
-        for l in range(lmax + 1):
+        for ell in range(lmax + 1):
             for m in range(lmax + 1):
-                mask_indices = self.coefficient_idx(l, m)
+                mask_indices = self.coefficient_idx(ell, m)
                 rotate_inv_rescale = torch.ones(
-                    (1, int((l + 1) ** 2), int((l + 1) ** 2))
+                    (1, int((ell + 1) ** 2), int((ell + 1) ** 2))
                 )
-                for l_sub in range(l + 1):
+                for l_sub in range(ell + 1):
                     if l_sub <= m:
                         continue
                     start_idx = l_sub**2
@@ -154,7 +156,7 @@ class CoefficientMapping(torch.nn.Module):
                     ] = rescale_factor
                 rotate_inv_rescale = rotate_inv_rescale[:, :, mask_indices]
                 self.register_buffer(
-                    f"rotate_inv_rescale_l{l}_m{m}",
+                    f"rotate_inv_rescale_l{ell}_m{m}",
                     rotate_inv_rescale,
                     persistent=False,
                 )

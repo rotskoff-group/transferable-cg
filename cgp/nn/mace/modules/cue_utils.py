@@ -1,14 +1,15 @@
 import dataclasses
-from typing import Iterator, Any, Dict
+from typing import Iterator
 import itertools
 import cuequivariance as cue
 import numpy as np
 from e3nn import o3
-import torch
+
 
 @dataclasses.dataclass
 class CuEquivarianceConfig:
     """Configuration for cuequivariance acceleration"""
+
     enabled: bool = False
     layout: str = "mul_ir"  # One of: mul_ir, ir_mul
     layout_str: str = "mul_ir"
@@ -23,9 +24,8 @@ class CuEquivarianceConfig:
     def __post_init__(self):
         self.layout_str = self.layout
         self.layout = getattr(cue, self.layout)
-        self.group = (
-            O3_e3nn if self.group == "O3_e3nn" else getattr(cue, self.group)
-        )
+        self.group = O3_e3nn if self.group == "O3_e3nn" else getattr(cue, self.group)
+
 
 class O3_e3nn(cue.O3):
     def __mul__(  # pylint: disable=no-self-argument
@@ -53,7 +53,6 @@ class O3_e3nn(cue.O3):
 
     @classmethod
     def iterator(cls) -> Iterator["O3_e3nn"]:
-        for l in itertools.count(0):
-            yield O3_e3nn(l=l, p=1 * (-1) ** l)
-            yield O3_e3nn(l=l, p=-1 * (-1) ** l)
-
+        for ell in itertools.count(0):
+            yield O3_e3nn(l=ell, p=1 * (-1) ** ell)
+            yield O3_e3nn(l=ell, p=-1 * (-1) ** ell)

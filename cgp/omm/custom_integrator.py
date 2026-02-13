@@ -5,10 +5,9 @@ from openmm.unit import BOLTZMANN_CONSTANT_kB, AVOGADRO_CONSTANT_NA
 
 
 def _get_beta(temperature):
-    beta = 1/(temperature * 
-              BOLTZMANN_CONSTANT_kB *
-              AVOGADRO_CONSTANT_NA)
+    beta = 1 / (temperature * BOLTZMANN_CONSTANT_kB * AVOGADRO_CONSTANT_NA)
     return beta
+
 
 def get_overdamped_integrator_custom_noise(temperature, friction, dt):
     """Creates OpenMM integrator to carry out overdamped Brownian integration
@@ -20,15 +19,15 @@ def get_overdamped_integrator_custom_noise(temperature, friction, dt):
         overdamped_integrator: OpenMM Integrator
     """
 
-
     overdamped_integrator = CustomIntegrator(dt)
-    overdamped_integrator.addGlobalVariable("kT", 1/_get_beta(temperature))
+    overdamped_integrator.addGlobalVariable("kT", 1 / _get_beta(temperature))
     overdamped_integrator.addGlobalVariable("friction", friction)
     overdamped_integrator.addPerDofVariable("eta", 0)
 
     overdamped_integrator.addUpdateContextState()
     overdamped_integrator.addComputePerDof(
-        "x", "x+dt*f/(m*friction) + eta*sqrt(2*kT*dt/(m*friction))")
+        "x", "x+dt*f/(m*friction) + eta*sqrt(2*kT*dt/(m*friction))"
+    )
     return overdamped_integrator
 
 
@@ -42,14 +41,14 @@ def get_overdamped_integrator(temperature, friction, dt):
         overdamped_integrator: OpenMM Integrator
     """
 
-
     overdamped_integrator = CustomIntegrator(dt)
-    overdamped_integrator.addGlobalVariable("kT", 1/_get_beta(temperature))
+    overdamped_integrator.addGlobalVariable("kT", 1 / _get_beta(temperature))
     overdamped_integrator.addGlobalVariable("friction", friction)
 
     overdamped_integrator.addUpdateContextState()
     overdamped_integrator.addComputePerDof(
-        "x", "x+dt*f/(m*friction) + gaussian*sqrt(2*kT*dt/(m*friction))")
+        "x", "x+dt*f/(m*friction) + gaussian*sqrt(2*kT*dt/(m*friction))"
+    )
     return overdamped_integrator
 
 
@@ -62,7 +61,6 @@ def get_verlet_integrator(temperature, friction, dt):
     Returns:
         verlet_integrator: OpenMM Integrator
     """
-
 
     verlet_integrator = CustomIntegrator(dt)
     verlet_integrator.addComputePerDof("v", "v+0.5*dt*f/m")
@@ -82,17 +80,14 @@ def get_ovrvo_integrator(temperature, friction, dt):
         ovrvo_integrator: OpenMM Integrator
     """
 
-
     ovrvo_integrator = CustomIntegrator(dt)
     ovrvo_integrator.setConstraintTolerance(1e-8)
-    ovrvo_integrator.addGlobalVariable("a", math.exp(-friction * dt/2))
-    ovrvo_integrator.addGlobalVariable(
-        "b", np.sqrt(1 - np.exp(-2 * friction * dt/2)))
-    ovrvo_integrator.addGlobalVariable("kT", 1/_get_beta(temperature))
+    ovrvo_integrator.addGlobalVariable("a", math.exp(-friction * dt / 2))
+    ovrvo_integrator.addGlobalVariable("b", np.sqrt(1 - np.exp(-2 * friction * dt / 2)))
+    ovrvo_integrator.addGlobalVariable("kT", 1 / _get_beta(temperature))
     ovrvo_integrator.addPerDofVariable("x1", 0)
 
-    ovrvo_integrator.addComputePerDof(
-        "v", "(a * v) + (b * sqrt(kT/m) * gaussian)")
+    ovrvo_integrator.addComputePerDof("v", "(a * v) + (b * sqrt(kT/m) * gaussian)")
     ovrvo_integrator.addConstrainVelocities()
 
     ovrvo_integrator.addComputePerDof("v", "v + 0.5*dt*(f/m)")
@@ -107,7 +102,6 @@ def get_ovrvo_integrator(temperature, friction, dt):
 
     ovrvo_integrator.addComputePerDof("v", "v + 0.5*dt*f/m")
     ovrvo_integrator.addConstrainVelocities()
-    ovrvo_integrator.addComputePerDof(
-        "v", "(a * v) + (b * sqrt(kT/m) * gaussian)")
+    ovrvo_integrator.addComputePerDof("v", "(a * v) + (b * sqrt(kT/m) * gaussian)")
     ovrvo_integrator.addConstrainVelocities()
     return ovrvo_integrator

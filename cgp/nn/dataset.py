@@ -3,31 +3,33 @@ from torch.utils.data import Dataset
 from typing import Optional
 from torch.types import Device
 
+
 class NNDataset(Dataset):
-    def __init__(self, 
-                 get_hdf5_data, 
-                 only_cutoff_edges, 
-                 only_nonbonded, 
-                 update_edge_indices, 
-                 data_in_memory=True,
-                 requires_forces=True, 
-                 requires_energies=False,
-                 requires_esm2_embeddings=False,
-                 random_rotate=False):
+    def __init__(
+        self,
+        get_hdf5_data,
+        only_cutoff_edges,
+        only_nonbonded,
+        update_edge_indices,
+        data_in_memory=True,
+        requires_forces=True,
+        requires_energies=False,
+        random_rotate=False,
+    ):
         self.get_hdf5_data = get_hdf5_data
         self.data_in_memory = data_in_memory
         self.requires_forces = requires_forces
         self.requires_energies = requires_energies
-        self.requires_esm2_embeddings = requires_esm2_embeddings
         self.random_rotate = random_rotate
         self.open_hdf5()
-        self.length = [len(x['positions']) for x in self.cg_hdf5]
+        self.length = [len(x["positions"]) for x in self.cg_hdf5]
         self.index = [(i, j) for i, x in enumerate(self.length) for j in range(x)]
         self.length = len(self.index)
-        self.nn_only_cutoff_edges = only_cutoff_edges # only use edges less than cutoff
-        self.nn_only_nonbonded = only_nonbonded # only use edges i,<j+4
-        self.update_edge_indices = update_edge_indices # all dataset built to have a cutoff of 20.0
-        
+        self.nn_only_cutoff_edges = only_cutoff_edges  # only use edges less than cutoff
+        self.nn_only_nonbonded = only_nonbonded  # only use edges i,<j+4
+        self.update_edge_indices = (
+            update_edge_indices  # all dataset built to have a cutoff of 20.0
+        )
 
     def __len__(self):
         return self.length
@@ -37,29 +39,31 @@ class NNDataset(Dataset):
         if type(self.cg_hdf5) is not list:
             self.cg_hdf5 = [self.cg_hdf5]
 
-        self.positions = [x['positions'] for x in self.cg_hdf5]
+        self.positions = [x["positions"] for x in self.cg_hdf5]
         if self.requires_forces:
-            self.forces = [x['forces'] for x in self.cg_hdf5]
+            self.forces = [x["forces"] for x in self.cg_hdf5]
         if self.requires_energies:
-            self.energies = [x['energies'] for x in self.cg_hdf5]
+            self.energies = [x["energies"] for x in self.cg_hdf5]
 
-        self.angle_indices = [x['angle_indices'] for x in self.cg_hdf5]
-        self.angle_features = [x['angle_features'] for x in self.cg_hdf5]
+        self.angle_indices = [x["angle_indices"] for x in self.cg_hdf5]
+        self.angle_features = [x["angle_features"] for x in self.cg_hdf5]
 
-        self.dihedral_indices = [x['dihedral_indices'] for x in self.cg_hdf5]
-        self.dihedral_features = [x['dihedral_features'] for x in self.cg_hdf5]
+        self.dihedral_indices = [x["dihedral_indices"] for x in self.cg_hdf5]
+        self.dihedral_features = [x["dihedral_features"] for x in self.cg_hdf5]
 
-        self.bond_distance_indices = [x['bond_distance_indices'] for x in self.cg_hdf5]
-        self.bond_distance_features = [x['bond_distance_features'] for x in self.cg_hdf5]
+        self.bond_distance_indices = [x["bond_distance_indices"] for x in self.cg_hdf5]
+        self.bond_distance_features = [
+            x["bond_distance_features"] for x in self.cg_hdf5
+        ]
 
-        self.nonbonded_edge_indices = [x['nonbonded_edge_indices'] for x in self.cg_hdf5]
-        self.nonbonded_edge_features = [x['nonbonded_edge_features'] for x in self.cg_hdf5]
+        self.nonbonded_edge_indices = [
+            x["nonbonded_edge_indices"] for x in self.cg_hdf5
+        ]
+        self.nonbonded_edge_features = [
+            x["nonbonded_edge_features"] for x in self.cg_hdf5
+        ]
 
-        self.atom_features = [x['atom_features'] for x in self.cg_hdf5]
-        
-        if self.requires_esm2_embeddings:
-            self.esm2_embedding_index = [x['esm2_embedding_index'] for x in self.cg_hdf5]
-            self.esm2_embeddings = [x['esm2_embeddings'] for x in self.cg_hdf5]
+        self.atom_features = [x["atom_features"] for x in self.cg_hdf5]
 
         if self.data_in_memory:
             self.positions = [x[:] for x in self.positions]
@@ -81,13 +85,9 @@ class NNDataset(Dataset):
             self.nonbonded_edge_features = [x[:] for x in self.nonbonded_edge_features]
 
             self.atom_features = [x[:] for x in self.atom_features]
-            if self.requires_esm2_embeddings:
-                self.esm2_embedding_index = [x[:] for x in self.esm2_embedding_index]
-                self.esm2_embeddings = [x[:] for x in self.esm2_embeddings]
-        
 
     def __getitem__(self, idx):
-        if not hasattr(self, 'cg_hdf5'):
+        if not hasattr(self, "cg_hdf5"):
             print("Opening HDF5")
             self.open_hdf5()
         i, j = self.index[idx]
@@ -107,7 +107,9 @@ class NNDataset(Dataset):
             energies = None
 
         bond_distance_features = self.bond_distance_features[i][j]
-        bond_distance_features = torch.tensor(bond_distance_features[bond_distance_features != -1])
+        bond_distance_features = torch.tensor(
+            bond_distance_features[bond_distance_features != -1]
+        )
 
         angle_indices = self.angle_indices[i][j]
         angle_features = self.angle_features[i][j]
@@ -121,86 +123,83 @@ class NNDataset(Dataset):
 
         bond_distance_indices = self.bond_distance_indices[i][j]
         bond_distance_features = self.bond_distance_features[i][j]
-        bond_distance_indices = torch.tensor(bond_distance_indices[bond_distance_features != -1])
-        bond_distance_features = torch.tensor(bond_distance_features[bond_distance_features != -1])
-        
+        bond_distance_indices = torch.tensor(
+            bond_distance_indices[bond_distance_features != -1]
+        )
+        bond_distance_features = torch.tensor(
+            bond_distance_features[bond_distance_features != -1]
+        )
+
         nonbonded_edge_indices = self.nonbonded_edge_indices[i][j]
         nonbonded_edge_features = self.nonbonded_edge_features[i][j]
-        nonbonded_edge_indices = torch.tensor(nonbonded_edge_indices[nonbonded_edge_features[:, 0] != -1, :])
-        nonbonded_edge_features = torch.tensor(nonbonded_edge_features[nonbonded_edge_features[:, 0] != -1, :])
+        nonbonded_edge_indices = torch.tensor(
+            nonbonded_edge_indices[nonbonded_edge_features[:, 0] != -1, :]
+        )
+        nonbonded_edge_features = torch.tensor(
+            nonbonded_edge_features[nonbonded_edge_features[:, 0] != -1, :]
+        )
 
+        edges = generate_edges(
+            num_atoms=num_atoms,
+            nonbonded_edge_indices=nonbonded_edge_indices,
+            bonded_indices=bond_distance_indices,
+            angle_indices=angle_indices,
+            dihedral_indices=dihedral_indices,
+            nn_only_cutoff_edges=not self.update_edge_indices,
+            nn_only_nonbonded=self.nn_only_nonbonded,  # TODO hardcoded for now nonbonded
+            include_reverse_edges=True,
+        )
 
-
-        edges = generate_edges(num_atoms = num_atoms, 
-                                 nonbonded_edge_indices = nonbonded_edge_indices, 
-                                 bonded_indices = bond_distance_indices,
-                                 angle_indices = angle_indices,
-                                 dihedral_indices = dihedral_indices,
-                                 nn_only_cutoff_edges = not self.update_edge_indices, 
-                                 nn_only_nonbonded = self.nn_only_nonbonded, #TODO hardcoded for now nonbonded
-                                 include_reverse_edges=True)
-        
         if self.random_rotate:
             positions, forces = randomly_rotate(positions, forces)
-            
-        if self.requires_esm2_embeddings:
-            esm2_embedding_index = self.esm2_embedding_index[i][j]
-            esm2_embeddings = self.esm2_embeddings[i][esm2_embedding_index]
-            esm2_embeddings = torch.tensor(esm2_embeddings)
-            return (positions,
-                    forces,
-                    energies,
-                    angle_indices.to(torch.int64),
-                    angle_features,
-                    dihedral_indices.to(torch.int64),
-                    dihedral_features,
-                    bond_distance_indices.to(torch.int64),
-                    bond_distance_features,
-                    nonbonded_edge_indices.to(torch.int64),
-                    nonbonded_edge_features, 
-                    edges,
-                    atom_features,
-                    esm2_embeddings,
-                    self.update_edge_indices)
+        return (
+            positions,
+            forces,
+            energies,
+            angle_indices.to(torch.int64),
+            angle_features,
+            dihedral_indices.to(torch.int64),
+            dihedral_features,
+            bond_distance_indices.to(torch.int64),
+            bond_distance_features,
+            nonbonded_edge_indices.to(torch.int64),
+            nonbonded_edge_features,
+            edges,
+            atom_features,
+            self.update_edge_indices,
+        )
+
+
+def generate_edges(
+    num_atoms,
+    nonbonded_edge_indices,
+    bonded_indices,
+    angle_indices,
+    dihedral_indices,
+    nn_only_cutoff_edges,
+    nn_only_nonbonded,
+    include_reverse_edges=False,
+):
+    if nn_only_nonbonded:
+        if nn_only_cutoff_edges:
+            edges = torch.tensor(nonbonded_edge_indices).to(torch.int64)
         else:
-            return (positions,
-                    forces,
-                    energies,
-                    angle_indices.to(torch.int64),
-                    angle_features,
-                    dihedral_indices.to(torch.int64),
-                    dihedral_features,
-                    bond_distance_indices.to(torch.int64),
-                    bond_distance_features,
-                    nonbonded_edge_indices.to(torch.int64),
-                    nonbonded_edge_features, 
-                    edges,
-                    atom_features,
-                    None,
-                    self.update_edge_indices)
-        
-def generate_edges(num_atoms, nonbonded_edge_indices, bonded_indices, angle_indices, dihedral_indices,
-                   nn_only_cutoff_edges, nn_only_nonbonded, include_reverse_edges=False):
-        if nn_only_nonbonded:
-            if nn_only_cutoff_edges:
-                edges = torch.tensor(nonbonded_edge_indices).to(torch.int64)
-            else:
-                edges = torch.combinations(torch.arange(num_atoms), r=2).to(torch.int64)
-                edges = edges[edges[:, 1] - edges[:, 0] > 3]
+            edges = torch.combinations(torch.arange(num_atoms), r=2).to(torch.int64)
+            edges = edges[edges[:, 1] - edges[:, 0] > 3]
+    else:
+        if nn_only_cutoff_edges:  # bonded and nonbonded less than cutoff
+            # dihedral_indices = torch.tensor(dihedral_indices.clone())
+            # nonbonded_edge_indices = torch.tensor(nonbonded_edge_indices.clone())
+            i2 = torch.stack([bonded_indices[:, 0], bonded_indices[:, -1]], dim=1)
+            i3 = torch.stack([angle_indices[:, 0], angle_indices[:, -1]], dim=1)
+            i4 = torch.stack([dihedral_indices[:, 0], dihedral_indices[:, -1]], dim=1)
+            edges = torch.cat([i2, i3, i4, nonbonded_edge_indices], dim=0)
+
         else:
-            if nn_only_cutoff_edges: # bonded and nonbonded less than cutoff
-                # dihedral_indices = torch.tensor(dihedral_indices.clone())
-                # nonbonded_edge_indices = torch.tensor(nonbonded_edge_indices.clone())
-                i2 = torch.stack([bonded_indices[:, 0], bonded_indices[:, -1]], dim=1)
-                i3 = torch.stack([angle_indices[:, 0], angle_indices[:, -1]], dim=1)
-                i4 = torch.stack([dihedral_indices[:, 0], dihedral_indices[:, -1]], dim=1)
-                edges = torch.cat([i2, i3, i4, nonbonded_edge_indices], dim=0)
-                
-            else:
-                edges = torch.combinations(torch.arange(num_atoms), r=2).to(torch.int64)
-        if include_reverse_edges:
-            edges = torch.cat([edges, edges[:, [1, 0]]], dim=0).to(torch.int64)
-        return edges    
+            edges = torch.combinations(torch.arange(num_atoms), r=2).to(torch.int64)
+    if include_reverse_edges:
+        edges = torch.cat([edges, edges[:, [1, 0]]], dim=0).to(torch.int64)
+    return edges
 
 
 def randomly_rotate(p, f):
@@ -216,6 +215,7 @@ def randomly_rotate(p, f):
     if f is not None:
         f = f @ R.T  # (N, 3)
     return p, f
+
 
 # taken from https://github.com/rotskoff-group/MoLE/blob/main/src/mole/utils/structure.py
 def _copysign(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -267,6 +267,7 @@ def quaternion_to_matrix(quaternions: torch.Tensor) -> torch.Tensor:
     )
     return o.reshape(quaternions.shape[:-1] + (3, 3))
 
+
 def random_quaternions(
     n: int, dtype: Optional[torch.dtype] = None, device: Optional[Device] = None
 ) -> torch.Tensor:
@@ -307,8 +308,4 @@ def random_rotations(
         Rotation matrices as tensor of shape (n, 3, 3).
     """
     quaternions = random_quaternions(n, dtype=dtype, device=device)
-    return quaternion_to_matrix(quaternions)    
-        
-    
-
-
+    return quaternion_to_matrix(quaternions)
