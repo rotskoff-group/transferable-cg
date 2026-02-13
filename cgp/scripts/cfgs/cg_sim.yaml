@@ -30,7 +30,6 @@ global_args:
   start_positions: "starting_positions_chignolin.npy"
   start_indices: "starting_index.npy"
   num_data_points: 10000
-  batch_size: 10
   save_freq: 10
   chk_freq: 1000
   

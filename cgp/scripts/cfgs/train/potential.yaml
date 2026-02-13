@@ -9,7 +9,7 @@ lightning_model_args:
   vectorize_div: True
   l1_lambda: 0.0
   load_balance_lambda: 0.0
-  layers_to_freeze: ["bonds_mean", "bonds_k", "angles_mean", "angles_k"]
+  layers_to_freeze: ["prior.bonds_mean", "prior.bonds_k", "prior.angles_mean", "prior.angles_k"]
   optimizer: "Adam"
   optimizer_args:
     nn_lr: 1.0e-03

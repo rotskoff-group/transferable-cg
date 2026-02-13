@@ -10,7 +10,7 @@ https://pytorch.org/get-started/locally/
 
 ### 2. Install Project Dependencies
 
-Install the project in editable mode:
+Change into transferable-cg directory and install the project in editable mode:
 ```bash
 uv pip install -e .
 ```
@@ -32,11 +32,11 @@ Replace `${CUDA}` with one of the following based on your PyTorch installation:
 For more information, visit: https://pypi.org/project/torch-scatter/
 
 ## Usage
+| Command | Description | 
+| ------- | ----------- |
+| make_u_dataset | Creates coarse-grained (CG) datasets from atomistic trajectory data for training. |
+| u_train | Trains neural network potential models using PyTorch Lightning. |
+| u_test | Evaluates trained neural network potential models on test datasets. |
+| cg_sim | Runs parallel coarse-grained (CG) molecular dynamics simulations using a trained model on a single GPU.
 
-[Add usage instructions here]
-
-## Requirements
-
-- Python 3.x
-- CUDA-capable GPU (recommended)
-- PyTorch 2.7.0+
+For more detailed instructions and options, see `docs/commands`

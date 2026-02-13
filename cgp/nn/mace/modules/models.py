@@ -5,7 +5,6 @@
 ###########################################################################################
 
 from typing import Any, Callable, Dict, List, Optional, Type, Union, Tuple
-import torch_geometric
 import numpy as np
 import torch
 import cuequivariance as cue
@@ -13,7 +12,7 @@ import cuequivariance_torch as cuet
 from e3nn import o3
 from e3nn.util.jit import compile_mode
 from .utils import adjacency_matrix as adj_matrix_wrapper
-from .cue_utils import CuEquivarianceConfig, O3_e3nn
+from .cue_utils import CuEquivarianceConfig
 from cgp.cg import all_pairwise_types
 
 from cgp.nn.mace import modules

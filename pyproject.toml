@@ -33,9 +33,10 @@ dependencies = [
     "omegaconf>=2.3.0",
     "openmm[cuda12]>=8.1.1",
     "pandas>=2.2.3",
-    "torch>=2.6.0",
     "torch-geometric>=2.6.1",
+    "tensorboard",
     "torchtyping>=0.1.5",
+    "PyYAML"
 ]
 
 [tool.hatch.build.targets.sdist]

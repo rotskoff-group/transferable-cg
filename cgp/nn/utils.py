@@ -1,8 +1,6 @@
-import copy
 import numpy as np
 import torch
 import cgp.nn
-from omegaconf import OmegaConf
 import h5py
 
     

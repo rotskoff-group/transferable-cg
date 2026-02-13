@@ -3,7 +3,6 @@ import torch.nn as nn
 from cgp.cg import all_bond_types, all_angle_types, all_dihedral_angle_types, all_pairwise_types
 import os
 import numpy as np
-import math
 
 class ForceField(nn.Module):
     def __init__(self,
