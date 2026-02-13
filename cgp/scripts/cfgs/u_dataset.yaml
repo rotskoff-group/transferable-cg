@@ -1,0 +1,17 @@
+defaults:
+  - cg: fixed
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+  - _self_
+
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .  
+
+global_args:
+  multiple_protein_names: null
+  is_individual_dataset_made: True
+  concatenate_datasets: False
+  root_data_folder_name: "./"
+  root_save_folder_name: "./"

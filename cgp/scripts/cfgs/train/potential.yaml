@@ -1,0 +1,34 @@
+lightning_model: UModel
+lightning_model_args:
+  return_forces: False
+  model_temperature: 300
+  loss_type: "force matching" # "force matching" or "score matching"
+  div_method: "exact" # "exact" or "hutchinson" or "stein" 
+  div_samples: 100
+  div_epsilon: 0.001
+  vectorize_div: True
+  l1_lambda: 0.0
+  load_balance_lambda: 0.0
+  layers_to_freeze: ["prior.bonds_mean", "prior.bonds_k", "prior.angles_mean", "prior.angles_k"]
+  optimizer: "Adam"
+  optimizer_args:
+    nn_lr: 1.0e-03
+    prior_lr: 1.0e-05
+  lr_scheduler: "ReduceLROnPlateau"
+  lr_scheduler_args:
+  monitor: "val/TotalLoss"
+  sync_dist: True
+  on_step: True
+resume_training_path: null
+trainer_args:
+  accelerator: "cuda"
+  devices: "auto"
+  strategy: "auto"
+  log_every_n_steps: 10000
+  max_epochs: 25000
+  enable_progress_bar: False
+  precision: "32-true"
+  accumulate_grad_batches: 1
+seed_args:
+  seed: 42
+  workers: True

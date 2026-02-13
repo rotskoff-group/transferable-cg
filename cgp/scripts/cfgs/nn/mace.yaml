@@ -1,0 +1,14 @@
+model: "MACE"
+collate_fn: "nn_collate_features"
+model_args:
+  nn_cutoff: 20.0
+  num_bessel: 8
+  num_polynomial_cutoff: 5
+  max_ell: 3
+  num_interactions: 2
+  hidden_irreps: "128x0e + 128x1o"
+  MLP_irreps: "16x0e"
+  correlation: 3
+  max_z: null
+  use_cueq: true
+  

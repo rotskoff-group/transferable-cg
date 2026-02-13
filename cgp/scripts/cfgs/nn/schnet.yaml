@@ -1,0 +1,13 @@
+model: "SchNet"
+dataset: "NNDataset"
+collate_fn: "nn_collate_features"
+model_args:
+  nn_cutoff: 20.0
+  n_atom_basis: 128
+  n_filters: 128
+  n_interaction_blocks: 2
+  n_radial_basis: 25
+  radial_basis_type: "GaussianBasis" # "GaussianBasis" or "ExpNormalBasis"
+  max_z: 67
+  include_positional_encoding: False
+  include_bond_embedding: False

@@ -1,0 +1,16 @@
+simulation_type: "ProteinImplicit"
+simulation_args:
+  temperature: 300
+  temperature_units: "kelvin"
+  friction: 0.1
+  dt: 0.001
+  time_units: "picoseconds"
+  fix: null
+  integrator_to_use: "ovrvo"
+  do_energy_minimization: False
+  chk_freq: null #Automatically computed if 0
+  device: "CUDA" #CUDA or CPU
+solvent_args:
+  implicit_solvent: "OBC2"
+  implicit_solvent_kappa: 0.1
+  implicit_solvent_kappa_length_units: "nanometer"

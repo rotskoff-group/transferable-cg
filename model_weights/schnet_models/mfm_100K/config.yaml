@@ -1,0 +1,98 @@
+nn:
+  model: SchNet
+  dataset: NNDataset
+  collate_fn: nn_collate_features
+  model_args:
+    nn_cutoff: 20.0
+    n_atom_basis: 128
+    n_filters: 128
+    n_interaction_blocks: 2
+    n_radial_basis: 64
+    radial_basis_type: ExpNormalBasis
+    max_z: 67
+    include_positional_encoding: false
+    include_bond_embedding: false
+prior:
+  model: ForceField
+  collate_fn: forcefield_collate_features
+  model_args:
+    nn_cutoff: 20.0
+    return_forces: false
+    has_bonded: true
+    has_angles: true
+    has_vdw: true
+    has_wca: true
+    has_coulomb: true
+    has_dihedrals: true
+    init_bonded_terms: true
+    init_angle_terms: true
+    init_dihedral_terms: true
+    init_nonbonded_terms: true
+    num_dihedral_basis: 10
+    dielectric_constant: 1.0
+    vdw_cutoff_distance: 20.0
+train:
+  lightning_model: UModel
+  lightning_model_args:
+    return_forces: false
+    model_temperature: 300
+    loss_type: force matching
+    div_method: stein
+    div_samples: 1
+    div_epsilon: 0.0001
+    vectorize_div: false
+    l1_lambda: 1.0
+    load_balance_lambda: 0.0
+    layers_to_freeze:
+    - prior.bonds_mean
+    - prior.bonds_k
+    - prior.angles_mean
+    - prior.angles_k
+    - prior.dihedral_a1
+    - prior.dihedral_a2
+    optimizer: Adam
+    optimizer_args:
+      nn_lr: 0.001
+      prior_lr: 0.001
+    lr_scheduler: ReduceLROnPlateau
+    lr_scheduler_args:
+      patience: 5
+    monitor: val/TotalLoss
+    sync_dist: true
+    on_step: false
+  resume_training_path: null
+  trainer_args:
+    accelerator: cuda
+    devices: 2
+    strategy: ddp_find_unused_parameters_true
+    log_every_n_steps: 10000
+    max_epochs: 500
+    enable_progress_bar: false
+    precision: 32-true
+    accumulate_grad_batches: 1
+  seed_args:
+    seed: 42
+    workers: true
+global_args:
+  use_nn: true
+  use_prior: true
+  load_model: null
+dataset:
+  model: NNDataset
+  edge_args:
+    only_cutoff_edges: true
+    only_nonbonded: false
+    update_edge_indices: false
+  dtype: float32
+  log_every_n_steps: 500
+  data_in_memory: false
+  batch_size: 96
+  num_workers: 8
+  dataset_split_args:
+    train: 0.8
+    val: 0.1
+    test: 0.1
+  individual_protein_datasets: null
+  dataset_folder_name: /data2/scratch/group_scratch/cg/datasets/mdCATH_1000/
+  adaption_dataset_folder_name: null
+  train_dataset_fraction: 1.0

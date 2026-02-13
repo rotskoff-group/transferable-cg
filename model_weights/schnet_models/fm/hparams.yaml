@@ -1,0 +1,54 @@
+nn_model_name: SchNet
+nn_model_args:
+  nn_cutoff: 20.0
+  n_atom_basis: 128
+  n_filters: 128
+  n_interaction_blocks: 2
+  n_radial_basis: 64
+  radial_basis_type: ExpNormalBasis
+  max_z: 67
+  include_positional_encoding: false
+  include_bond_embedding: false
+prior_model_name: ForceField
+prior_model_args:
+  nn_cutoff: 20.0
+  return_forces: false
+  has_bonded: true
+  has_angles: true
+  has_vdw: true
+  has_wca: true
+  has_coulomb: true
+  has_dihedrals: true
+  init_bonded_terms: true
+  init_angle_terms: true
+  init_dihedral_terms: true
+  init_nonbonded_terms: true
+  num_dihedral_basis: 10
+  dielectric_constant: 1.0
+  vdw_cutoff_distance: 20.0
+return_forces: false
+model_temperature: 300
+loss_type: force matching
+div_method: stein
+div_samples: 1
+div_epsilon: 0.0001
+vectorize_div: false
+l1_lambda: 1.0
+load_balance_lambda: 0.0
+layers_to_freeze:
+- prior.bonds_mean
+- prior.bonds_k
+- prior.angles_mean
+- prior.angles_k
+- prior.dihedral_a1
+- prior.dihedral_a2
+optimizer: Adam
+optimizer_args:
+  nn_lr: 0.001
+  prior_lr: 0.001
+lr_scheduler: ReduceLROnPlateau
+lr_scheduler_args:
+  patience: 5
+monitor: val/TotalLoss
+sync_dist: true
+on_step: false

@@ -1,0 +1,35 @@
+defaults:
+  - cg: fixed
+  - nn: schnet
+  - prior: forcefield
+  - train: potential
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+  - _self_
+
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .  
+
+integrator_args:
+  dt: 0.001
+  friction: 10.
+  temperature: 300.
+  length_units: "angstroms"
+  energy_units: "kilocalories_per_mole"
+  time_units: "picoseconds"
+  temperature_units: "kelvin"
+
+
+global_args:
+  model_folder: "./lightning_logs/version_23473/"
+  bias_force: null
+  save_folder_name: "./cgtest/"
+  pdb_file: "/home/abpark/2024/protein_dataset/chignolin/chignolin.pdb"
+  start_positions: "starting_positions_chignolin.npy"
+  start_indices: "starting_index.npy"
+  num_data_points: 10000
+  save_freq: 10
+  chk_freq: 1000
+  

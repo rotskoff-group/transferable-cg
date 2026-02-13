@@ -1,0 +1,63 @@
+nn_model_name: eSEN
+nn_model_args:
+  nn_cutoff: 20.0
+  max_num_elements: 67
+  sphere_channels: 16
+  lmax: 2
+  mmax: 2
+  edge_channels: 16
+  distance_function: gaussian
+  num_distance_basis: 10
+  direct_forces: false
+  num_layers: 2
+  hidden_channels: 16
+  norm_type: rms_norm_sh
+  act_type: gate
+  mlp_type: spectral
+  use_envelope: true
+  activation_checkpointing: true
+prior_model_name: ForceField
+prior_model_args:
+  nn_cutoff: 20.0
+  return_forces: false
+  has_bonded: true
+  has_angles: true
+  has_vdw: true
+  has_wca: true
+  has_coulomb: true
+  has_dihedrals: true
+  has_calvados_vdw: false
+  init_bonded_terms: true
+  init_angle_terms: true
+  init_dihedral_terms: true
+  init_nonbonded_terms: true
+  init_calvados_vdw_terms: true
+  num_dihedral_basis: 10
+  dielectric_constant: 1.0
+  vdw_cutoff_distance: 20.0
+return_forces: false
+model_temperature: 300
+loss_type: force matching
+div_method: stein
+div_samples: 1
+div_epsilon: 0.0001
+vectorize_div: false
+l1_lambda: 1.0
+load_balance_lambda: 0.0
+layers_to_freeze:
+- prior.bonds_mean
+- prior.bonds_k
+- prior.angles_mean
+- prior.angles_k
+- prior.dihedral_a1
+- prior.dihedral_a2
+optimizer: Adam
+optimizer_args:
+  nn_lr: 0.001
+  prior_lr: 0.001
+lr_scheduler: ReduceLROnPlateau
+lr_scheduler_args:
+  patience: 5
+monitor: val/TotalLoss
+sync_dist: true
+on_step: false

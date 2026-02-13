@@ -1,0 +1,41 @@
+defaults:
+  - nn: schnet
+  - prior: forcefield
+  - train: potential
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+  - _self_
+
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .  
+
+global_args:
+  use_nn: true
+  use_prior: true
+  load_model: null
+
+dataset:
+  model: "NNDataset"
+  edge_args:
+    only_cutoff_edges: True
+    only_nonbonded: False
+    update_edge_indices: False
+  dtype: float32
+  log_every_n_steps: 500
+  data_in_memory: True
+  batch_size: 8
+  num_workers: 4
+  dataset_split_args:
+    train: 0.8
+    val: 0.2
+    test: 0.0
+  individual_protein_datasets: null
+  dataset_folder_name: null
+  adaption_dataset_folder_name: null
+  train_dataset_fraction: 1.0
+
+  
+  
+    
