@@ -10,13 +10,13 @@ Evaluates trained neural network potential models on test datasets using PyTorch
 The `u_test` command uses Hydra configuration overrides. Each argument follows the pattern `config.key=value`:
 
 ```bash
-u_test "category.parameter=value" "category.parameter2=value2" ...
+uv run u_test "category.parameter=value" "category.parameter2=value2" ...
 ```
 
 ### Example: Testing a Model
 
 ```bash
-u_test \
+uv run u_test \
   "global_args.config_path=./lightning_logs/version_0/config.yaml" \
   "global_args.ckpt_path=./lightning_logs/version_0/checkpoints/best_model.ckpt" \
   "global_args.use_training_dataset=true"
@@ -67,7 +67,7 @@ Evaluates the model on the test split defined during training.
 
 **Example:**
 ```bash
-u_test \
+uv run u_test \
   "global_args.config_path=./lightning_logs/version_0/config.yaml" \
   "global_args.ckpt_path=./lightning_logs/version_0/checkpoints/best_model.ckpt" \
   "global_args.use_training_dataset=true"
@@ -90,7 +90,7 @@ Evaluates the model on a completely new dataset not used during training.
 
 **Example:**
 ```bash
-u_test \
+uv run u_test \
   "global_args.config_path=./lightning_logs/version_0/config.yaml" \
   "global_args.ckpt_path=./lightning_logs/version_0/checkpoints/best_model.ckpt" \
   "global_args.use_training_dataset=false" \
@@ -115,7 +115,7 @@ Evaluates the model separately on individual proteins and saves per-protein metr
 
 **Example:**
 ```bash
-u_test \
+uv run u_test \
   "global_args.config_path=./lightning_logs/version_0/config.yaml" \
   "global_args.ckpt_path=./lightning_logs/version_0/checkpoints/best_model.ckpt" \
   "global_args.use_training_dataset=false" \

@@ -6,12 +6,12 @@ Runs parallel coarse-grained (CG) molecular dynamics simulations using a trained
 
 The `cg_sim` command uses Hydra configuration overrides. Each argument follows the pattern `config.key=value`:
 ```bash
-cg_sim "global_args.param1=value1" "global_args.param2=value2" ...
+uv run cg_sim "global_args.param1=value1" "global_args.param2=value2" ...
 ```
 
 ### Example: Running a Simulation
 ```bash
-cg_sim \
+uv run cg_sim \
   "global_args.model_folder=model_folder/" \
   "global_args.save_folder_name=save_folder/" \
   "global_args.bias_force=path/to/bias_force.pt" \

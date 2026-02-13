@@ -34,6 +34,8 @@ dependencies = [
     "torchtyping>=0.1.5",
     "PyYAML",
     "ruff>=0.15.1",
+    "torch>=2.0.1",
+    "torch-scatter>=2.1.2",
 ]
 
 [project.optional-dependencies]
@@ -52,6 +54,9 @@ include = [
     "/cgp/scripts",
     "/cgp/sim",
 ]
+
+[tool.uv.extra-build-dependencies]
+torch-scatter = ["torch"]
 
 [project.urls]
 Homepage = "https://github.com/rotskoff-group/transferable-cg"
