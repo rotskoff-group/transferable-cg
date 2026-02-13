@@ -17,20 +17,20 @@ uv venv
 source .venv/bin/activate  # On Linux/macOS
 ```
 
-### 2. Install PyTorch with CUDA Support
+#### 2. Install PyTorch with CUDA Support
 
-First, install PyTorch (preferrably with CUDA support) by following the instructions at:
+Install PyTorch (preferrably with CUDA support) by following the instructions at:
 https://pytorch.org/get-started/locally/
 
 
-### 3. Install Project Dependencies
+#### 3. Install Project Dependencies
 
 Change into transferable-cg directory and install the project in editable mode:
 ```bash
 uv pip install -e .
 ```
 
-### 4. Install torch-scatter
+#### 4. Install torch-scatter
 
 Install `torch-scatter` with the appropriate CUDA version:
 ```bash
