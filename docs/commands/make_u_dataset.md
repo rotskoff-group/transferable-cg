@@ -10,13 +10,13 @@ Creates coarse-grained (CG) datasets from atomistic trajectory data for training
 The `make_u_dataset` command uses Hydra configuration overrides. Each argument follows the pattern `config.key=value`:
 
 ```bash
-make_u_dataset "category.parameter=value" "category.parameter2=value2" ...
+uv run make_u_dataset "category.parameter=value" "category.parameter2=value2" ...
 ```
 
 ### Example: Creating a Dataset
 
 ```bash
-make_u_dataset \
+uv run make_u_dataset \
   "cg.cg_model_args.protein_name=my_protein" \
   "global_args.root_data_folder_name=./raw_data/" \
   "global_args.root_save_folder_name=./processed_data/" \
@@ -117,7 +117,7 @@ Process a single protein and create its dataset.
 
 **Example:**
 ```bash
-make_u_dataset \
+uv run make_u_dataset \
   "cg.cg_model_args.protein_name=protein_A" \
   "global_args.root_data_folder_name=./raw_data/" \
   "global_args.root_save_folder_name=./datasets/" \
@@ -149,7 +149,7 @@ Process multiple proteins and create individual datasets for each.
 
 **Example:**
 ```bash
-make_u_dataset \
+uv run make_u_dataset \
   "global_args.multiple_protein_names=./protein_list.npy" \
   "global_args.is_individual_dataset_made=false" \
   "global_args.root_data_folder_name=./raw_data/" \
@@ -187,7 +187,7 @@ Process multiple proteins and concatenate them into a single combined dataset.
 
 **Example (Create and Concatenate):**
 ```bash
-make_u_dataset \
+uv run make_u_dataset \
   "global_args.multiple_protein_names=./protein_list.npy" \
   "global_args.is_individual_dataset_made=false" \
   "global_args.concatenate_datasets=true" \
@@ -197,7 +197,7 @@ make_u_dataset \
 
 **Example (Concatenate Existing Datasets):**
 ```bash
-make_u_dataset \
+uv run make_u_dataset \
   "global_args.multiple_protein_names=./protein_list.npy" \
   "global_args.is_individual_dataset_made=true" \
   "global_args.concatenate_datasets=true" \

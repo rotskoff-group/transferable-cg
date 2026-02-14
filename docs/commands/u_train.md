@@ -10,13 +10,13 @@ Trains neural network potential models using PyTorch Lightning.
 The `u_train` command uses Hydra configuration overrides. Each argument follows the pattern `config.key=value`:
 
 ```bash
-u_train "category.parameter=value" "category.parameter2=value2" ...
+uv run u_train "category.parameter=value" "category.parameter2=value2" ...
 ```
 
 ### Example: Training a Model
 
 ```bash
-u_train \
+uv run u_train \
   "dataset.dataset_folder_name=./data/training_set/" \
   "dataset.batch_size=16" \
   "train.trainer_args.max_epochs=1000" \
@@ -160,8 +160,8 @@ The neural network architecture is configured via Hydra config groups. Default: 
 
 **To change architecture:**
 ```bash
-u_train nn=schnet     # Use MACE architecture
-u_train nn=esen        # Use eSEN architecture
+uv run u_train nn=schnet     # Use MACE architecture
+uv run u_train nn=esen        # Use eSEN architecture
 ```
 See `cfgs/nn/` directory for available architectures and their parameters.
 
@@ -182,7 +182,7 @@ See `cfgs/prior/` directory for available priors and their parameters.
 Train a model from scratch on a new dataset:
 
 ```bash
-u_train \
+uv run u_train \
   "dataset.dataset_folder_name=./data/my_protein/" \
   "dataset.batch_size=16" \
   "train.trainer_args.max_epochs=1000"
@@ -193,7 +193,7 @@ u_train \
 Train using force matching loss:
 
 ```bash
-u_train \
+uv run u_train \
   "dataset.dataset_folder_name=./data/my_protein/" \
   "train.lightning_model_args.loss_type='force matching'" \
   "train.optimizer_args.nn_lr=0.001"
@@ -204,7 +204,7 @@ u_train \
 Train using score matching loss:
 
 ```bash
-u_train \
+uv run u_train \
   "dataset.dataset_folder_name=./data/my_protein/" \
   "train.lightning_model_args.loss_type='score matching'" \
   "train.lightning_model_args.div_method='stein'" \
@@ -217,7 +217,7 @@ Fine-tune a pretrained model on new data.
 
 **Important:** When loading a pretrained model, you must override the default configs to match the original model's architecture and settings (e.g., same `nn` type, hidden dimensions, layer counts). Only the dataset and training hyperparameters (like learning rate) should differ.
 ```bash
-u_train \
+uv run u_train \
   nn=schnet \  # Must match pretrained model architecture
   prior=forcefield \  # Must match pretrained model prior
   "dataset.dataset_folder_name=./data/new_protein/" \
@@ -232,7 +232,7 @@ u_train \
 Train on multiple GPUs:
 
 ```bash
-u_train \
+uv run u_train \
   "dataset.dataset_folder_name=./data/my_protein/" \
   "train.trainer_args.devices=4" \
   "train.trainer_args.strategy='ddp'" \
@@ -244,7 +244,7 @@ u_train \
 Train with an additional adaptation dataset:
 
 ```bash
-u_train \
+uv run u_train \
   "dataset.dataset_folder_name=./data/source_data/" \
   "dataset.adaption_dataset_folder_name=./data/target_data/" \
   "dataset.batch_size=16"
