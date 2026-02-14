@@ -13,6 +13,8 @@
 uv sync
 ```
 
+**Note:** torch-scatter needs to build from source, which takes ~10 minutes on first install.
+
 ## Usage
 | Command | Description |
 | ------- | ----------- |

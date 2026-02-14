@@ -36,10 +36,6 @@ dependencies = [
     "ruff>=0.15.1",
     "torch>=2.0.1",
     "torch-scatter>=2.1.2",
-]
-
-[project.optional-dependencies]
-cuda = [
     "cuequivariance==0.3.0",
     "cuequivariance-torch==0.3.0",
     "cuequivariance-ops-torch-cu12==0.5.1",
