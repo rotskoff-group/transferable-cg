@@ -27,19 +27,23 @@ dependencies = [
     "lightning>=2.3.3",
     "mdtraj>=1.10.0",
     "omegaconf>=2.3.0",
-    "openmm[cuda12]>=8.1.1",
+    "openmm>=8.1.1",
     "pandas>=2.2.3",
-    "torch-geometric>=2.6.1",
     "tensorboard",
     "torchtyping>=0.1.5",
     "PyYAML",
     "ruff>=0.15.1",
+    "torch>=2.0.0",
+    "torch-geometric>=2.6.1",
+    "cuequivariance==0.3.0",
+    "cuequivariance-torch==0.3.0",
 ]
 
 [project.optional-dependencies]
 cuda = [
-    "cuequivariance==0.3.0",
-    "cuequivariance-torch==0.3.0",
+    "openmm-cuda-12",
+    "torch>=2.0.0",
+    "torch-geometric>=2.6.1",
     "cuequivariance-ops-torch-cu12==0.5.1",
 ]
 
