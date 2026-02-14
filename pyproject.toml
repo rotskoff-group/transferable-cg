@@ -51,11 +51,14 @@ include = [
     "/cgp/sim",
 ]
 
-[tool.uv.extra-build-dependencies]
-torch-scatter = ["torch"]
-
 [project.urls]
 Homepage = "https://github.com/rotskoff-group/transferable-cg"
+
+[tool.uv]
+find-links = ["https://data.pyg.org/whl/torch-2.7.0+cu128.html"]
+
+[tool.uv.extra-build-dependencies]
+torch-scatter = ["torch"]
 
 [project.scripts]
 u_train = "cgp.scripts.cg.train_u:main"
