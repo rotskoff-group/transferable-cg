@@ -132,7 +132,7 @@ uv run make_u_dataset "global_args.root_data_folder_name=${root_data_folder}/ins
     "cg.cg_model_args.protein_name=null"\
     "global_args.root_save_folder_name=${root_save_folder}"\
     "global_args.multiple_protein_names=${root_data_folder}/training_cath_1000.npy"\
-    "cg.cg_model_args.dataset_subset_indices_filename=subset_1000_cg.npy"\
+    "cg.cg_model_args.dataset_subset_indices_filename=subset_1000_cg"\
     "global_args.is_individual_dataset_made=False"\
     "global_args.concatenate_datasets=True"
 
