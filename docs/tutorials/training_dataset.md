@@ -9,7 +9,7 @@ All atomistic data used to train CG models can be downloaded from:
 
 ## Dataset Overview
 
-The repository contains four trajectory datasets plus metadata files for train/test splits:
+The data repository contains four trajectory datasets plus metadata files for train/test splits:
 
 ```
 transferable-cg/
@@ -104,7 +104,7 @@ Each HDF5 file includes the following attributes:
 
 ## MFM training dataset
 
-To create the training dataset we used to train MFM models, run the following command in the transferable-cg codebase repo:
+To create the training dataset we used to train MFM models, run the following command:
 
 ```bash
 root_data_folder=${"path/to/transferable-cg"} # Path to downloaded dataset
