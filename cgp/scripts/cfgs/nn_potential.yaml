@@ -24,7 +24,7 @@ dataset:
     update_edge_indices: False
   dtype: float32
   log_every_n_steps: 500
-  data_in_memory: True
+  data_in_memory: False
   batch_size: 8
   num_workers: 4
   dataset_split_args:

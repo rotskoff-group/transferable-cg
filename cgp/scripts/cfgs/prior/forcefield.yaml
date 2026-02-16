@@ -14,7 +14,7 @@ model_args:
   init_angle_terms: True
   init_dihedral_terms: True
   init_nonbonded_terms: True
-  init_calvados_vdw_terms: True
+  init_calvados_vdw_terms: False
   num_dihedral_basis: 10
   dielectric_constant: 1.0
   vdw_cutoff_distance: 20.0
