@@ -3,6 +3,7 @@ from openmm import *
 from openmm.app import *
 import openmm.unit
 import openmm.app
+import os
 import warnings
 import cgp.omm.custom_integrator as custom_integrator
 from .utils import TrajWriter
@@ -82,6 +83,8 @@ class Protein:
 
         platform = Platform.getPlatformByName(simulation_args["device"])
         self.simulation = Simulation(topology, system, integrator, platform)
+        self.target_atom_indices = self._get_target_atom_indices()
+        self.save_filename = save_filename
 
         if chkpt_filename is None:
             self.simulation.context.setPositions(positions)
@@ -91,14 +94,7 @@ class Protein:
         else:
             self.simulation.loadCheckpoint(chkpt_filename)
 
-        self.target_atom_indices = self._get_target_atom_indices()
-        all_reporters = [
-            CheckpointReporter(f"{save_filename}.chk", simulation_args["chk_freq"])
-        ]
-        for reporter in all_reporters:
-            self.simulation.reporters.append(reporter)
         self.temperature = temperature
-        self.save_filename = save_filename
 
     def _get_target_atom_indices(self):
         """Gets the indices of all non H2O atoms
@@ -221,25 +217,53 @@ class Protein:
         )
         return positions, pe, ke, forces
 
-    def generate_trajectory(self, num_data_points, save_freq, tw_args):
-        """ """
-        writer = TrajWriter(
-            filename=f"{self.save_filename}.hdf5",
-            target_atom_indices=self.target_atom_indices,
-            num_data_points=num_data_points + 1,
-            tw_args=tw_args,
-        )
+    def generate_trajectory(
+        self,
+        traj_path,
+        chk_dir,
+        name,
+        traj_idx,
+        frames_per_file,
+        save_freq,
+        chk_freq,
+        start_frame,
+        end_frame,
+        tw_args,
+    ):
+        """Write frames [start_frame, end_frame) to traj_path.
 
-        writer.write(self.simulation, frame=0)
-        for i in range(num_data_points):
-            self.simulation.step(save_freq)
-            writer.write(self.simulation, frame=i + 1)
-        writer.close()
+        Checkpoints are saved every chk_freq frames. If end_frame ==
+        frames_per_file, the file is complete and a final checkpoint is saved.
+        """
+        with TrajWriter(
+            filename=traj_path,
+            target_atom_indices=self.target_atom_indices,
+            num_data_points=frames_per_file,
+            tw_args=tw_args,
+        ) as writer:
+            for frame in range(start_frame, end_frame):
+                self.simulation.step(save_freq)
+                writer.write(self.simulation, frame=frame)
+                if (frame + 1) % chk_freq == 0:
+                    j = (frame + 1) // chk_freq - 1
+                    self.simulation.saveCheckpoint(
+                        os.path.join(chk_dir, f"{name}_{traj_idx}_{j}.chk")
+                    )
+
+        if end_frame >= frames_per_file:
+            self.simulation.saveCheckpoint(
+                os.path.join(chk_dir, f"{name}_{traj_idx}_final.chk")
+            )
 
 
 class ProteinVacuum(Protein):
     def __init__(
-        self, filename, chk, simulation_args, solvent_args=None, save_filename=None
+        self,
+        filename,
+        simulation_args,
+        solvent_args=None,
+        save_filename=None,
+        chkpt_filename=None,
     ):
         prmtop = AmberPrmtopFile(f"{filename}.prmtop")
         system = prmtop.createSystem()
@@ -256,11 +280,6 @@ class ProteinVacuum(Protein):
 
         if save_filename is None:
             save_filename = filename
-        if chk == 0:
-            chkpt_filename = None
-        else:
-            chkpt_filename = f"{save_filename}_{chk - 1}.chk"
-        save_filename = f"{save_filename}_{chk}"
 
         super().__init__(
             topology=topology,
@@ -274,7 +293,12 @@ class ProteinVacuum(Protein):
 
 class ProteinImplicit(Protein):
     def __init__(
-        self, filename, chk, simulation_args, solvent_args, save_filename=None
+        self,
+        filename,
+        simulation_args,
+        solvent_args,
+        save_filename=None,
+        chkpt_filename=None,
     ):
         warnings.warn("Check all Implicit solvent parameters (e.g. solvent)")
         prmtop = AmberPrmtopFile(f"{filename}.prmtop")
@@ -301,11 +325,6 @@ class ProteinImplicit(Protein):
 
         if save_filename is None:
             save_filename = filename
-        if chk == 0:
-            chkpt_filename = None
-        else:
-            chkpt_filename = f"{save_filename}_{chk - 1}.chk"
-        save_filename = f"{save_filename}_{chk}"
 
         super().__init__(
             topology=topology,
@@ -319,9 +338,13 @@ class ProteinImplicit(Protein):
 
 class ProteinSolvent(Protein):
     def __init__(
-        self, filename, chk, simulation_args, solvent_args, save_filename=None
+        self,
+        filename,
+        simulation_args,
+        solvent_args,
+        save_filename=None,
+        chkpt_filename=None,
     ):
-
         prmtop = AmberPrmtopFile(f"{filename}.prmtop")
         inpcrd = AmberInpcrdFile(f"{filename}.crd")
 
@@ -350,14 +373,10 @@ class ProteinSolvent(Protein):
 
         system.addForce(
             MonteCarloBarostat(
-                (
-                    solvent_args["mcb_pressure"]
-                    * getattr(openmm.unit, solvent_args["mcb_pressure_units"])
-                ),
-                (
-                    solvent_args["mcb_temperature"]
-                    * getattr(openmm.unit, solvent_args["mcb_temperature_units"])
-                ),
+                solvent_args["mcb_pressure"]
+                * getattr(openmm.unit, solvent_args["mcb_pressure_units"]),
+                solvent_args["mcb_temperature"]
+                * getattr(openmm.unit, solvent_args["mcb_temperature_units"]),
                 solvent_args["mcb_freq"],
             )
         )
@@ -372,7 +391,7 @@ class ProteinSolvent(Protein):
         forces["NonbondedForce"].setUseSwitchingFunction(
             solvent_args["use_switching_function"]
         )
-        forces["NonbondedForce"].setSwitchingDistance((nonbonded_cutoff - switch_width))
+        forces["NonbondedForce"].setSwitchingDistance(nonbonded_cutoff - switch_width)
 
         positions = inpcrd.getPositions(asNumpy=True)
         box_vectors = inpcrd.getBoxVectors(asNumpy=True)
@@ -380,11 +399,6 @@ class ProteinSolvent(Protein):
 
         if save_filename is None:
             save_filename = filename
-        if chk == 0:
-            chkpt_filename = None
-        else:
-            chkpt_filename = f"{save_filename}_{chk - 1}.chk"
-        save_filename = f"{save_filename}_{chk}"
 
         super().__init__(
             topology=topology,

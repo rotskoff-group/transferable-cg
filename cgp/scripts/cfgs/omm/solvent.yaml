@@ -8,7 +8,6 @@ simulation_args:
   fix: null
   integrator_to_use: "ovrvo"
   do_energy_minimization: True
-  chk_freq: null #Automatically computed if 0
   device: "CUDA" #CUDA or CPU
 solvent_args:
   nonbonded_cutoff: 0.9
@@ -16,7 +15,7 @@ solvent_args:
   nonbonded_method: "PME"
   switch_width: 0.16
   switch_width_length_units: "nanometers"
-  constraints: "HBonds"
+  constraints: null
   mcb_pressure: 1
   mcb_pressure_units: "bar"
   mcb_temperature: 300

@@ -45,6 +45,11 @@ cuda = [
     "cuequivariance-ops-torch-cu12==0.5.1",
 ]
 
+notebook = [
+    "ipykernel>=7.2.0",
+    "matplotlib>=3.10.8",
+]
+
 [tool.hatch.build.targets.sdist]
 include = [
     "/cgp",

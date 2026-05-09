@@ -8,7 +8,6 @@ simulation_args:
   fix: null
   integrator_to_use: "ovrvo"
   do_energy_minimization: False
-  chk_freq: null #Automatically computed if 0
   device: "CUDA" #CUDA or CPU
 solvent_args:
   implicit_solvent: "OBC2"

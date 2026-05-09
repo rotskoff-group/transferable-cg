@@ -11,9 +11,13 @@ hydra:
     dir: .  
 
 global_args:
-  folder_name: "./"
-  amber_filename: "aib9"
-  save_filename: "aib9"
-  starting_positions: null
-  num_data_points: 10
+  amber_filename: ""           # full base path to AMBER files (no extension)
+  save_folder: ""
+  save_filename: ""
+  starting_positions: null     # .npy with positions (Å) matching the full simulation topology; applied on fresh start
+  burn_in_data_points: null    # frames to run before data collection; written to checkpoints/{name}_burn_in.hdf5 and excluded from traj_all.hdf5
+  num_data_points: null        # total frames to collect across all files; null = no limit
+  frames_per_file: 1000        # frames per trajectory HDF5 file
   save_freq: 5000
+  chk_freq: null               # checkpoint interval in frames; null = once per file
+  error_log: null              # path to write errors and exit cleanly; null = raise exceptions
