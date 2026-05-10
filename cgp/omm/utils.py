@@ -1,3 +1,5 @@
+import os
+import re
 import numpy as np
 import h5py
 import openmm.unit
@@ -16,6 +18,72 @@ kT = (
     * openmm.unit.BOLTZMANN_CONSTANT_kB
     * openmm.unit.AVOGADRO_CONSTANT_NA
 )
+
+
+def parse_checkpoints(chk_dir, name):
+    """Scan checkpoint files to determine simulation resume state.
+
+    Returns:
+        i_cur: index of the file to write next (= i_last_final + 1)
+        j_cur: index of the last in-progress checkpoint within i_cur (-1 if none)
+        i_last_final: index of the last fully completed file (-1 if none)
+    """
+    final_pat = re.compile(rf"^{re.escape(name)}_(\d+)_final\.chk$")
+    inprog_pat = re.compile(rf"^{re.escape(name)}_(\d+)_(\d+)\.chk$")
+
+    chk_files = os.listdir(chk_dir)
+    final_idxs = [int(m.group(1)) for f in chk_files if (m := final_pat.match(f))]
+    i_last_final = max(final_idxs) if final_idxs else -1
+    i_cur = i_last_final + 1
+
+    inprog = [
+        (int(m.group(1)), int(m.group(2)))
+        for f in chk_files
+        if (m := inprog_pat.match(f))
+    ]
+    inprog_for_i = [(fi, j) for (fi, j) in inprog if fi == i_cur]
+    j_cur = max(j for (_, j) in inprog_for_i) if inprog_for_i else -1
+
+    return i_cur, j_cur, i_last_final
+
+
+def concatenate_trajectories(traj_dir, name, n_files, out_path, extra_datasets=None):
+    """Concatenate per-file HDF5 trajectories into out_path one file at a time.
+
+    Streams data without holding all files in memory simultaneously.
+    Copies file-level attrs from the first source file to the output.
+    extra_datasets: optional {key: array} written to the output file after concatenation.
+    """
+    first_path = os.path.join(traj_dir, f"{name}_0.hdf5")
+    with h5py.File(first_path, "r") as f0:
+        keys = list(f0.keys())
+        tail_shapes = {k: f0[k].shape[1:] for k in keys}
+        dtypes = {k: f0[k].dtype for k in keys}
+        attrs = dict(f0.attrs)
+
+    with h5py.File(out_path, "w") as out:
+        out.attrs.update(attrs)
+
+        for k in keys:
+            out.create_dataset(
+                k,
+                shape=(0,) + tail_shapes[k],
+                maxshape=(None,) + tail_shapes[k],
+                dtype=dtypes[k],
+            )
+
+        for i in range(n_files):
+            traj_path = os.path.join(traj_dir, f"{name}_{i}.hdf5")
+            with h5py.File(traj_path, "r") as src:
+                for k in keys:
+                    chunk = src[k][:]
+                    n_cur = out[k].shape[0]
+                    out[k].resize(n_cur + len(chunk), axis=0)
+                    out[k][n_cur:] = chunk
+
+        if extra_datasets:
+            for k, v in extra_datasets.items():
+                out.create_dataset(k, data=v)
 
 
 def update_standard_error(prev_mean, prev_std, new_data, n):
@@ -141,19 +209,66 @@ class TrajWriter:
         num_atoms = len(self.target_atom_indices)
         self.omm_state_inputs = self._get_omm_info(tw_args)
 
-        self.file = h5py.File(self.filename, "w")
-        self.file.create_dataset("forces", (num_data_points, num_atoms, 3), dtype="f4")
-        self.file.create_dataset(
-            "positions", (num_data_points, num_atoms, 3), dtype="f4"
-        )
-        self.file.create_dataset(
-            "velocities", (num_data_points, num_atoms, 3), dtype="f4"
-        )
-        self.file.create_dataset("pe", (num_data_points,), dtype="f4")
-        self.file.create_dataset("ke", (num_data_points,), dtype="f4")
+        if os.path.exists(self.filename):
+            self.file = h5py.File(self.filename, "a")
+            self._validate_existing_file(num_data_points, num_atoms)
+        else:
+            self.file = h5py.File(self.filename, "w")
+            self.file.create_dataset(
+                "forces", (num_data_points, num_atoms, 3), dtype="f4"
+            )
+            self.file.create_dataset(
+                "positions", (num_data_points, num_atoms, 3), dtype="f4"
+            )
+            self.file.create_dataset(
+                "velocities", (num_data_points, num_atoms, 3), dtype="f4"
+            )
+            self.file.create_dataset("pe", (num_data_points,), dtype="f4")
+            self.file.create_dataset("ke", (num_data_points,), dtype="f4")
 
-        for key, value in tw_args.items():
-            self.file.attrs[key] = value
+            for key, value in tw_args.items():
+                self.file.attrs[key] = value
+
+    def _validate_existing_file(self, num_data_points, num_atoms):
+        """Assert that an existing HDF5 file has the expected datasets and shapes.
+
+        Raises ValueError if required datasets are missing or their shapes are
+        incompatible with the current num_data_points / target_atom_indices so
+        that configuration mismatches are caught immediately rather than
+        silently corrupting data.
+        """
+        required_3d = ("forces", "positions", "velocities")
+        required_1d = ("pe", "ke")
+        required = list(required_3d) + list(required_1d)
+        for k in required:
+            if k not in self.file.keys():
+                self.file.close()
+                raise ValueError(
+                    f"Existing trajectory file '{self.filename}' is missing required "
+                    f"dataset(s): {missing}. Cannot resume."
+                )
+
+        for k in required_3d:
+            expected = (num_data_points, num_atoms, 3)
+            actual = self.file[k].shape
+            if actual != expected:
+                self.file.close()
+                raise ValueError(
+                    f"Dataset '{k}' in '{self.filename}' has shape {actual} but "
+                    f"expected {expected}. frames_per_file or atom selection may "
+                    f"have changed between runs. Cannot resume."
+                )
+
+        for k in required_1d:
+            expected = (num_data_points,)
+            actual = self.file[k].shape
+            if actual != expected:
+                self.file.close()
+                raise ValueError(
+                    f"Dataset '{k}' in '{self.filename}' has shape {actual} but "
+                    f"expected {expected}. frames_per_file may have changed "
+                    f"between runs. Cannot resume."
+                )
 
     def _get_omm_info(self, tw_args):
         assert "length_units" in tw_args
@@ -213,3 +328,9 @@ class TrajWriter:
 
     def close(self):
         self.file.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
