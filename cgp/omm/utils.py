@@ -239,17 +239,14 @@ class TrajWriter:
         """
         required_3d = ("forces", "positions", "velocities")
         required_1d = ("pe", "ke")
-        missing = [
-            k
-            for k in list(required_3d) + list(required_1d)
-            if k not in self.file
-        ]
-        if missing:
-            self.file.close()
-            raise ValueError(
-                f"Existing trajectory file '{self.filename}' is missing required "
-                f"dataset(s): {missing}. Cannot resume."
-            )
+        required = list(required_3d) + list(required_1d)
+        for k in required:
+            if k not in self.file.keys():
+                self.file.close()
+                raise ValueError(
+                    f"Existing trajectory file '{self.filename}' is missing required "
+                    f"dataset(s): {missing}. Cannot resume."
+                )
 
         for k in required_3d:
             expected = (num_data_points, num_atoms, 3)
