@@ -245,7 +245,7 @@ class TrajWriter:
                 self.file.close()
                 raise ValueError(
                     f"Existing trajectory file '{self.filename}' is missing required "
-                    f"dataset(s): {missing}. Cannot resume."
+                    f"dataset '{k}'. Cannot resume."
                 )
 
         for k in required_3d:

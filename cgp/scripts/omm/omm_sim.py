@@ -35,10 +35,10 @@ def _run(cfg, global_args):
     starting_positions = global_args.starting_positions
 
     if num_data_points is not None:
-        assert num_data_points % frames_per_file != 0, (
-            f"num_data_points ({num_data_points}) must not be an exact multiple of "
+        assert num_data_points % frames_per_file == 0, (
+            f"num_data_points ({num_data_points}) must be an exact multiple of "
             f"frames_per_file ({frames_per_file}). Choose values such that the "
-            f"remainder is non-zero."
+            f"remainder is  zero."
         )
 
     omm_config = cfg.omm
