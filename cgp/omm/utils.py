@@ -211,6 +211,7 @@ class TrajWriter:
 
         if os.path.exists(self.filename):
             self.file = h5py.File(self.filename, "a")
+            self._validate_existing_file(num_data_points, num_atoms)
         else:
             self.file = h5py.File(self.filename, "w")
             self.file.create_dataset(
@@ -227,6 +228,50 @@ class TrajWriter:
 
             for key, value in tw_args.items():
                 self.file.attrs[key] = value
+
+    def _validate_existing_file(self, num_data_points, num_atoms):
+        """Assert that an existing HDF5 file has the expected datasets and shapes.
+
+        Raises ValueError if required datasets are missing or their shapes are
+        incompatible with the current num_data_points / target_atom_indices so
+        that configuration mismatches are caught immediately rather than
+        silently corrupting data.
+        """
+        required_3d = ("forces", "positions", "velocities")
+        required_1d = ("pe", "ke")
+        missing = [
+            k
+            for k in list(required_3d) + list(required_1d)
+            if k not in self.file
+        ]
+        if missing:
+            self.file.close()
+            raise ValueError(
+                f"Existing trajectory file '{self.filename}' is missing required "
+                f"dataset(s): {missing}. Cannot resume."
+            )
+
+        for k in required_3d:
+            expected = (num_data_points, num_atoms, 3)
+            actual = self.file[k].shape
+            if actual != expected:
+                self.file.close()
+                raise ValueError(
+                    f"Dataset '{k}' in '{self.filename}' has shape {actual} but "
+                    f"expected {expected}. frames_per_file or atom selection may "
+                    f"have changed between runs. Cannot resume."
+                )
+
+        for k in required_1d:
+            expected = (num_data_points,)
+            actual = self.file[k].shape
+            if actual != expected:
+                self.file.close()
+                raise ValueError(
+                    f"Dataset '{k}' in '{self.filename}' has shape {actual} but "
+                    f"expected {expected}. frames_per_file may have changed "
+                    f"between runs. Cannot resume."
+                )
 
     def _get_omm_info(self, tw_args):
         assert "length_units" in tw_args
