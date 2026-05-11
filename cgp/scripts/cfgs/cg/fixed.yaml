@@ -8,7 +8,7 @@ cg_model_args:
   store_in_dataset_args:
     store_positions: True
     store_forces: True
-    store_energies: True
+    store_energies: False
     store_features: False
     store_bond_distance_features: True
     store_bond_angle_features: True
@@ -19,5 +19,11 @@ cg_model_args:
   nonbonded_feature_args:
     cutoff: 20
     cutoff_units: angstroms
+  force_map_args:
+    strategy: "slice" # "slice" or "optimized"
+    cutoff: 10       # required when strategy is "optimized"; same units as cg_length_units
+    random_subset_size: null  # frames used to fit weights; null uses all frames
+    random_seed: 42           # seed for random_subset_size sampling; null is non-deterministic
+  mean_force_estimation: false
 
 
