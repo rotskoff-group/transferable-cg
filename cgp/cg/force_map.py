@@ -30,7 +30,7 @@ def get_local_atoms(positions, cg_indices, cutoff, pad_value=-1):
     within_cutoff = mean_distances < cutoff
 
     counts = within_cutoff.sum(dim=1)
-    m_max = int(counts.max())
+    m_max = int(counts.max().item())
 
     order = torch.argsort(~within_cutoff, dim=1, stable=True)[:, :m_max]
     local_indices_full = free_indices[order]
