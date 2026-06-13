@@ -24,10 +24,12 @@ prior:
     has_wca: true
     has_coulomb: true
     has_dihedrals: true
+    has_calvados_vdw: false
     init_bonded_terms: true
     init_angle_terms: true
     init_dihedral_terms: true
     init_nonbonded_terms: true
+    init_calvados_vdw_terms: false
     num_dihedral_basis: 10
     dielectric_constant: 1.0
     vdw_cutoff_distance: 20.0
@@ -64,9 +66,9 @@ train:
   trainer_args:
     accelerator: cuda
     devices: 4
-    strategy: ddp
+    strategy: ddp_find_unused_parameters_true
     log_every_n_steps: 10000
-    max_epochs: 500
+    max_epochs: 300
     enable_progress_bar: false
     precision: 32-true
     accumulate_grad_batches: 1
@@ -86,13 +88,13 @@ dataset:
   dtype: float32
   log_every_n_steps: 500
   data_in_memory: false
-  batch_size: 32
+  batch_size: 48
   num_workers: 16
   dataset_split_args:
     train: 0.8
     val: 0.1
     test: 0.1
   individual_protein_datasets: null
-  dataset_folder_name: /data2/scratch/group_scratch/cg/datasets/mdCATH_1000_inst/
+  dataset_folder_name: /data2/scratch/group_scratch/cg/datasets/mdCATH_1000_FM_CG/
   adaption_dataset_folder_name: null
   train_dataset_fraction: 1.0

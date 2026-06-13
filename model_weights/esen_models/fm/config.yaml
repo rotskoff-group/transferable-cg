@@ -71,7 +71,7 @@ train:
   resume_training_path: null
   trainer_args:
     accelerator: cuda
-    devices: 4
+    devices: 8
     strategy: ddp_find_unused_parameters_true
     log_every_n_steps: 10000
     max_epochs: 40
@@ -84,7 +84,7 @@ train:
 global_args:
   use_nn: true
   use_prior: true
-  load_model: /data2/scratch/group_scratch/cg/080725ScoreMatch/esen_final/fm/lightning_logs/version_0/checkpoints/best_model-v1.ckpt
+  load_model: /scratch/groups/rotskoff/cg/2026/050826_FMDataset/models/esen/lightning_logs/version_0/checkpoints/best_model.ckpt
 dataset:
   model: NNDataset
   edge_args:
@@ -94,13 +94,13 @@ dataset:
   dtype: float32
   log_every_n_steps: 500
   data_in_memory: false
-  batch_size: 8
+  batch_size: 10
   num_workers: 16
   dataset_split_args:
     train: 0.8
     val: 0.1
     test: 0.1
   individual_protein_datasets: null
-  dataset_folder_name: /data2/scratch/group_scratch/cg/datasets/mdCATH_1000_inst/
+  dataset_folder_name: /scratch/groups/rotskoff/cg/2026/050826_FMDataset/mdCATH_1000_FM_CG/
   adaption_dataset_folder_name: null
   train_dataset_fraction: 1.0
