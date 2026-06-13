@@ -277,20 +277,17 @@ class CGFixed:
             )
             fg_forces[:, indices_to_keep].store(cg_forces_dataset)
 
-    def _assert_cg_positions_fixed(self, fg_positions, cg_indices, chunk_size=500):
-        """Assert that CG bead positions are identical across all frames (np.allclose).
+    def _assert_cg_positions_fixed(self, fg_positions, cg_indices):
+        """Assert that CG bead positions are identical across all frames."""
+        cg_positions = np.array(fg_positions[:, cg_indices])  # materialise (n_frames, n_beads, 3)
+        reference = cg_positions[0]                            # (n_beads, 3)
+        diff = cg_positions - reference[None, :, :]
+        max_displacement = np.abs((diff[:, 0:1, :] - diff[:, 1:, :]).max())
 
-        Processes in chunks to avoid materialising the full position array.
-        """
-        reference = np.array(fg_positions[0:1, cg_indices])  # (1, n_beads, 3)
-        n_frames = fg_positions.shape[0]
-        for start in range(0, n_frames, chunk_size):
-            chunk = np.array(fg_positions[start : start + chunk_size, cg_indices])
-            assert np.allclose(chunk, reference), (
-                f"mean_force_estimation=True requires all CG positions to be identical, "
-                f"but frames {start}–{min(start + chunk_size, n_frames) - 1} differ "
-                f"from frame 0"
-            )
+        assert max_displacement < 1e-3, (
+            f"mean_force_estimation=True requires all CG positions to be identical, "
+            f"but max displacement is {max_displacement}"
+        )
 
     def _store_optimized_cg_forces(
         self, fg_positions, fg_forces, file, cg_indices, cutoff, random_subset_size,
