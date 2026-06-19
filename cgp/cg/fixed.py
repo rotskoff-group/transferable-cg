@@ -28,6 +28,8 @@ class CGFixed:
         cg_energy_units,
         feature_args,
         nonbonded_feature_args,
+        force_map_args,
+        mean_force_estimation,
     ):
         # Defining CG Map
         if cg_type == "backbone":
@@ -65,13 +67,57 @@ class CGFixed:
         ]
         cg_topology = fg_topology.subset(cg_indices)
 
+        force_map_strategy = force_map_args["strategy"]
+        if force_map_strategy not in ("slice", "optimized"):
+            raise ValueError("force_map_args.strategy must be 'slice' or 'optimized'")
+        if force_map_strategy == "optimized":
+            if force_map_args.get("cutoff") is None:
+                raise ValueError(
+                    "force_map_args.cutoff must be specified when strategy is 'optimized'"
+                )
+            if fg_positions is None:
+                raise ValueError(
+                    "store_positions must be True when force_map_args.strategy is 'optimized'"
+                )
+        if mean_force_estimation:
+            if store_in_dataset_args["store_energies"]:
+                raise ValueError(
+                    "store_energies must be False when mean_force_estimation is True"
+                )
+            if fg_positions is None:
+                raise ValueError(
+                    "store_positions must be True when mean_force_estimation is True"
+                )
+            self._assert_cg_positions_fixed(fg_positions, cg_indices)
+
+        # For features that depend only on topology (bond, angle, dihedral, atom),
+        # batch_size is read from fg_positions.shape[0]. With mean_force_estimation
+        # we want batch_size=1, so pass a single-frame slice.
+        positions_for_features = fg_positions[0:1] if mean_force_estimation else fg_positions
+
         self.cg_dataset_filename = f"{save_folder_name}/dataset.hdf5"
 
         file = self._create_cg_dataset(cg_length_units, cg_energy_units)
         if store_in_dataset_args["store_positions"]:
-            self._store_cg_positions(fg_positions, file, cg_indices)
+            self._store_cg_positions(
+                fg_positions, file, cg_indices, mean_force_estimation=mean_force_estimation
+            )
         if store_in_dataset_args["store_forces"]:
-            self._store_cg_forces(fg_forces, file, cg_indices)
+            if force_map_strategy == "slice":
+                self._store_cg_forces(
+                    fg_forces, file, cg_indices, mean_force_estimation=mean_force_estimation
+                )
+            else:
+                self._store_optimized_cg_forces(
+                    fg_positions,
+                    fg_forces,
+                    file,
+                    cg_indices,
+                    force_map_args["cutoff"],
+                    force_map_args.get("random_subset_size"),
+                    random_seed=force_map_args.get("random_seed"),
+                    mean_force_estimation=mean_force_estimation,
+                )
         if store_in_dataset_args["store_energies"]:
             self._store_cg_energies(fg_energies, file)
         if store_in_dataset_args["store_features"]:
@@ -79,14 +125,14 @@ class CGFixed:
             single_config_feature = da.from_array(single_config_feature, chunks="auto")
             self._store_cg_features(single_config_feature, file["features"])
         if store_in_dataset_args["store_bond_distance_features"]:
-            self._store_bond_distance_features(fg_positions, file, cg_topology)
+            self._store_bond_distance_features(positions_for_features, file, cg_topology)
         if store_in_dataset_args["store_bond_angle_features"]:
-            self._store_bond_angle_features(fg_positions, file, cg_topology)
+            self._store_bond_angle_features(positions_for_features, file, cg_topology)
         if store_in_dataset_args["store_dihedral_angle_features"]:
-            self._store_dihedral_angle_features(fg_positions, file, cg_topology)
+            self._store_dihedral_angle_features(positions_for_features, file, cg_topology)
         if store_in_dataset_args["store_nonbonded_features"]:
             self._store_nonbonded_features(
-                fg_positions,
+                positions_for_features,
                 file,
                 cg_indices,
                 cg_length_units,
@@ -94,7 +140,7 @@ class CGFixed:
                 **nonbonded_feature_args,
             )
         if store_in_dataset_args["store_atom_features"]:
-            self._store_atom_features(fg_positions, file, cg_topology)
+            self._store_atom_features(positions_for_features, file, cg_topology)
 
         file.flush()
 
@@ -191,29 +237,112 @@ class CGFixed:
         file.attrs["energy_units"] = cg_energy_units.get_name()
         return file
 
-    def _store_cg_positions(self, fg_positions, file, indices_to_keep):
+    def _store_cg_positions(self, fg_positions, file, indices_to_keep, mean_force_estimation=False):
         """Stores the coarse-grained positions in a HDF5 file
         Args:
             fg_positions (dask.array): The full atomistic positions (num_data_points, num_atoms, 3)
             file (h5py.File): The HDF5 file
             indices_to_keep (list): The indices to keep (num_cg_beads)
+            mean_force_estimation (bool): If True, store only the first frame as a (1, n_beads, 3) dataset
         """
-        cg_positions_dataset = file.create_dataset(
-            "positions", (fg_positions.shape[0], len(indices_to_keep), 3), dtype="f4"
-        )
-        fg_positions[:, indices_to_keep].store(cg_positions_dataset)
+        if mean_force_estimation:
+            first_frame = np.array(fg_positions[0:1, indices_to_keep])  # (1, n_beads, 3)
+            dataset = file.create_dataset(
+                "positions", (1, len(indices_to_keep), 3), dtype="f4"
+            )
+            dataset[:] = first_frame
+        else:
+            cg_positions_dataset = file.create_dataset(
+                "positions", (fg_positions.shape[0], len(indices_to_keep), 3), dtype="f4"
+            )
+            fg_positions[:, indices_to_keep].store(cg_positions_dataset)
 
-    def _store_cg_forces(self, fg_forces, file, indices_to_keep):
+    def _store_cg_forces(self, fg_forces, file, indices_to_keep, mean_force_estimation=False):
         """Stores the coarse-grained forces in a HDF5 file
         Args:
             fg_forces (dask.array): The full atomistic forces (num_data_points, num_atoms, 3)
             file (h5py.File): The HDF5 file
             indices_to_keep (list): The indices to keep (num_cg_beads)
+            mean_force_estimation (bool): If True, store the mean force as a (1, n_beads, 3) dataset
         """
-        cg_forces_dataset = file.create_dataset(
-            "forces", (fg_forces.shape[0], len(indices_to_keep), 3), dtype="f4"
+        if mean_force_estimation:
+            mean_forces = np.array(fg_forces[:, indices_to_keep].mean(axis=0))  # (n_beads, 3)
+            dataset = file.create_dataset(
+                "forces", (1, len(indices_to_keep), 3), dtype="f4"
+            )
+            dataset[0] = mean_forces
+        else:
+            cg_forces_dataset = file.create_dataset(
+                "forces", (fg_forces.shape[0], len(indices_to_keep), 3), dtype="f4"
+            )
+            fg_forces[:, indices_to_keep].store(cg_forces_dataset)
+
+    def _assert_cg_positions_fixed(self, fg_positions, cg_indices):
+        """Assert that CG bead positions are identical across all frames."""
+        cg_positions = np.array(fg_positions[:, cg_indices])  # materialise (n_frames, n_beads, 3)
+        reference = cg_positions[0]                            # (n_beads, 3)
+        diff = cg_positions - reference[None, :, :]
+        max_displacement = np.abs((diff[:, 0:1, :] - diff[:, 1:, :]).max())
+
+        assert max_displacement < 1e-3, (
+            f"mean_force_estimation=True requires all CG positions to be identical, "
+            f"but max displacement is {max_displacement}"
         )
-        fg_forces[:, indices_to_keep].store(cg_forces_dataset)
+
+    def _store_optimized_cg_forces(
+        self, fg_positions, fg_forces, file, cg_indices, cutoff, random_subset_size,
+        random_seed=None, mean_force_estimation=False,
+    ):
+        """Stores optimized CG forces via local least-squares force matching.
+
+        If random_subset_size is given, a random subset of frames is used to fit the
+        per-bead weights; the fitted weights are then applied to ALL frames so the
+        stored forces have the same length as the full dataset. cutoff must be in the
+        same units as fg_positions.
+
+        If mean_force_estimation is True, the per-frame optimal forces are averaged
+        and stored as a single-frame (1, n_beads, 3) dataset.
+
+        Args:
+            fg_positions (dask.array): Full atomistic positions (n_frames, n_atoms, 3)
+            fg_forces (dask.array): Full atomistic forces (n_frames, n_atoms, 3)
+            file (h5py.File): The HDF5 file
+            cg_indices (list): Indices of CG representative atoms
+            cutoff (float): Local neighbourhood cutoff in same units as positions
+            random_subset_size (int or None): Number of frames used for fitting only
+            mean_force_estimation (bool): If True, store the mean force over all frames
+        """
+        import torch
+        from .force_map import get_all_optimal_cg_forces
+
+        all_positions = torch.from_numpy(np.array(fg_positions))
+        all_forces = torch.from_numpy(np.array(fg_forces))
+        cg_indices_tensor = torch.tensor(cg_indices)
+
+        fit_positions = fit_forces = None
+        if random_subset_size is not None:
+            generator = torch.Generator()
+            if random_seed is not None:
+                generator.manual_seed(random_seed)
+            subset_idx = torch.randperm(all_positions.shape[0], generator=generator)[:random_subset_size]
+            fit_positions = all_positions[subset_idx]
+            fit_forces = all_forces[subset_idx]
+
+        # get_all_optimal_cg_forces fits on fit_positions/fit_forces (or all frames if
+        # None) and applies the learned weights to all_positions/all_forces
+        cg_forces = get_all_optimal_cg_forces(
+            all_positions, all_forces, cg_indices_tensor, cutoff,
+            fit_positions=fit_positions, fit_forces=fit_forces,
+        )
+        if mean_force_estimation:
+            # (n_beads, n_frames, 3) -> (n_beads, 1, 3) -> (1, n_beads, 3)
+            cg_forces = cg_forces.mean(dim=1, keepdim=True).permute(1, 0, 2).numpy()
+        else:
+            # (n_beads, n_frames, 3) -> (n_frames, n_beads, 3)
+            cg_forces = cg_forces.permute(1, 0, 2).numpy()
+
+        cg_forces_dataset = file.create_dataset("forces", cg_forces.shape, dtype="f4")
+        cg_forces_dataset[:] = cg_forces
 
     def _store_cg_energies(self, fg_energies, file):
         """Stores the coarse-grained energies in a HDF5 file
